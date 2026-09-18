@@ -11,7 +11,7 @@ namespace Jellyfin.Plugin.JellyPoll.Library;
 /// Access check re-queries the item with the user attached so Jellyfin's own
 /// access/parental controls apply.
 /// </summary>
-public sealed class LibraryAccessValidator
+public sealed class LibraryAccessValidator : ILibraryAccessValidator
 {
     private readonly ILibraryManager _libraryManager;
 
@@ -20,8 +20,10 @@ public sealed class LibraryAccessValidator
         _libraryManager = libraryManager;
     }
 
-    /// <summary>Resolves a base item by id, or null when it no longer exists.</summary>
-    public BaseItem? ResolveItem(Guid itemId) => _libraryManager.GetItemById(itemId);
+    /// <summary>Resolves a base item by id, or null when it no longer exists.
+    /// Guid.Empty is rejected by the server with ArgumentException — treat as missing.</summary>
+    public BaseItem? ResolveItem(Guid itemId)
+        => itemId == Guid.Empty ? null : _libraryManager.GetItemById(itemId);
 
     /// <summary>
     /// True when the item exists and is visible to the user through a query with the user attached.
@@ -44,7 +46,7 @@ public sealed class LibraryAccessValidator
     }
 
     /// <summary>Suggestion type name for a resolved item, or null when type unsupported.</summary>
-    public static string? TypeName(BaseItem item) => item switch
+    public string? GetTypeName(BaseItem item) => item switch
     {
         Movie => "Movie",
         Episode => "Episode",

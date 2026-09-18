@@ -10,3 +10,5 @@ web/dist/
 # Local working documents (design docs, progress log) — not part of the public repo
 docs/
 PROGRESS.md
+
+temp/

@@ -28,7 +28,10 @@
   async function load() {
     try {
       detail = await jellypoll.getPoll(pollId);
-      myBallot = [...detail.myBallot];
+      // Don't clobber local unranked edits while a debounced save is pending.
+      if (!saveTimer) {
+        myBallot = [...detail.MyBallot];
+      }
       error = '';
     } catch (e) {
       error = e instanceof Error ? e.message : String(e);
@@ -52,7 +55,7 @@
     if (document.hidden || !detail) return;
     try {
       // 204 (unchanged) resolves to undefined; 200 resolves to { stateVersion }.
-      const res = await jellypoll.state(detail.poll.id, detail.poll.stateVersion);
+      const res = await jellypoll.state(detail.Poll.Id, detail.Poll.StateVersion);
       if (res) await load();
     } catch {
       /* network error — next tick retries */
@@ -71,6 +74,13 @@
     scheduleSave();
   }
 
+  function addToOrder(suggestionId: string) {
+    if (!myBallot.includes(suggestionId)) {
+      myBallot = [...myBallot, suggestionId];
+      scheduleSave();
+    }
+  }
+
   function scheduleSave() {
     saved = false;
     clearTimeout(saveTimer);
@@ -81,6 +91,7 @@
     try {
       await jellypoll.saveBallot(pollId, myBallot);
       saved = true;
+      saveTimer = undefined;
       await load();
     } catch (e) {
       if (e instanceof ApiError && e.code === 'poll_closed') {
@@ -114,14 +125,27 @@
     load();
   }
 
-  function onAdded(msg: string, isError: boolean) {
+  async function onAdded(msg: string, isError: boolean, suggestionId?: string) {
     showToast(msg, isError);
-    load();
+    if (suggestionId && !myBallot.includes(suggestionId)) {
+      // Auto-append the suggester's own pick to their watch order and save immediately
+      // (no debounce — avoids races with the detail refetch).
+      myBallot = [...myBallot, suggestionId];
+      clearTimeout(saveTimer);
+      saveTimer = undefined;
+      try {
+        await jellypoll.saveBallot(pollId, myBallot);
+        saved = true;
+      } catch (e) {
+        showToast(e instanceof Error ? e.message : String(e), true);
+      }
+    }
+    await load();
   }
 
-  const gold = $derived(detail?.standings.find((s) => s.rank === 1 && !s.itemMissing) ?? null);
+  const gold = $derived(detail?.Standings.find((s) => s.Rank === 1 && !s.ItemMissing) ?? null);
   const detailLink = $derived(
-    gold ? `${location.origin}/web/index.html#!/details?id=${gold.itemId}` : ''
+    gold ? `${location.origin}/web/index.html#!/details?id=${gold.ItemId}` : ''
   );
 </script>
 
@@ -129,10 +153,10 @@
   <div class="page">
     <div class="header">
       <a class="back" href="#/polls">← Polls</a>
-      <h1>{detail.poll.title} <span class="badge" class:closed={detail.poll.status === 'closed'}>{detail.poll.status}</span></h1>
+      <h1>{detail.Poll.Title} <span class="badge" class:closed={detail.Poll.Status === 'closed'}>{detail.Poll.Status}</span></h1>
       <div class="manage">
-        {#if detail.isCreator || detail.isAdmin}
-          {#if detail.poll.status === 'open'}
+        {#if detail.IsCreator || detail.IsAdmin}
+          {#if detail.Poll.Status === 'open'}
             <button class="primary" onclick={closePoll}>Close poll</button>
           {:else}
             <button onclick={reopenPoll}>Reopen</button>
@@ -140,29 +164,29 @@
         {/if}
       </div>
     </div>
-    <p class="dim">by {detail.poll.createdByName}</p>
+    <p class="dim">by {detail.Poll.CreatedByName}</p>
 
     {#if error}<div class="error-box">{error}</div>{/if}
 
-    {#if detail.poll.status === 'closed'}
+    {#if detail.Poll.Status === 'closed'}
       <h2>Final results</h2>
-      <Standings standings={detail.standings} closed={true} />
+      <Standings standings={detail.Standings} closed={true} />
       {#if gold}
         <a class="card watchnext" href={detailLink} target="_blank" rel="noreferrer">
-          ▶ Watch "{gold.name}" now
+          ▶ Watch "{gold.Name}" now
         </a>
       {/if}
     {:else}
       <div class="columns">
         <div class="col">
-          <SuggestPicker poll={detail.poll} onAdded={onAdded} />
-          <SuggestionBoard {detail} onChanged={onChanged} />
+          <SuggestPicker poll={detail.Poll} onAdded={onAdded} />
+          <SuggestionBoard {detail} {myBallot} onChanged={onChanged} onAddToOrder={addToOrder} />
         </div>
         <div class="col">
           <MyRanking {detail} {myBallot} onReorder={reorder} onRemove={removeFromBallot} />
           <p class="dim savehint">{saved ? '✓ ranking saved' : 'ranking saves automatically'}</p>
           <h3>Standings <span class="live">live ●</span></h3>
-          <Standings standings={detail.standings} />
+          <Standings standings={detail.Standings} />
         </div>
       </div>
     {/if}

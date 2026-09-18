@@ -1,4 +1,5 @@
 using Jellyfin.Plugin.JellyPoll.Api;
+using Jellyfin.Plugin.JellyPoll.Data;
 using Jellyfin.Plugin.JellyPoll.Library;
 using Jellyfin.Plugin.JellyPoll.Menu;
 using Jellyfin.Plugin.JellyPoll.Services;
@@ -14,15 +15,18 @@ public sealed class PluginServiceRegistrator : IPluginServiceRegistrator
     /// <inheritdoc />
     public void RegisterServices(IServiceCollection serviceCollection, IServerApplicationHost applicationHost)
     {
-        var instance = Plugin.Instance;
-        if (instance is null)
+        // Self-contained registrations: do NOT depend on Plugin.Instance being constructed yet
+        // (the registrator can run before plugin instantiation; M4 E2E discovered this the hard way).
+        serviceCollection.AddSingleton<Db>();
+        serviceCollection.AddSingleton<IPollRepository>(sp =>
         {
-            // Plugin failed to construct; keep server booting but without JellyPoll services.
-            return;
-        }
-
-        serviceCollection.AddSingleton(instance.Repository);
-        serviceCollection.AddSingleton<LibraryAccessValidator>();
+            var repo = new SqlitePollRepository(sp.GetRequiredService<Db>());
+            repo.Initialize();
+            return repo;
+        });
+        serviceCollection.AddSingleton<ILibraryAccessValidator, LibraryAccessValidator>();
+        serviceCollection.AddSingleton<IConfigurationAccessor, PluginConfigurationAccessor>();
+        serviceCollection.AddSingleton<IUserNameResolver, UserNameResolver>();
         serviceCollection.AddSingleton<PollService>();
         serviceCollection.AddSingleton<MenuLinkInstaller>();
     }

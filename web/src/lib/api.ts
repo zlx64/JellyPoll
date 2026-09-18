@@ -50,7 +50,9 @@ async function request<T>(path: string, init: RequestInit): Promise<T> {
 // ---------- JellyPoll API ----------
 
 export const jellypoll = {
-  listPolls: () => request<{ polls: PollSummary[] }>('/JellyPoll/Polls', { method: 'GET' }),
+  listPolls: () => request<{ Polls: PollSummary[]; IsAdmin: boolean }>('/JellyPoll/Polls', { method: 'GET' }),
+
+  deleteAllClosedPolls: () => request<{ DeletedCount: number }>('/JellyPoll/Polls/Closed', { method: 'DELETE' }),
 
   createPoll: (title: string, allowEpisodes?: boolean, allowSeries?: boolean) =>
     request<PollDetail>('/JellyPoll/Polls', {
@@ -61,7 +63,7 @@ export const jellypoll = {
   getPoll: (id: string) => request<PollDetail>(`/JellyPoll/Polls/${id}`, { method: 'GET' }),
 
   addSuggestion: (pollId: string, itemId: string) =>
-    request<{ suggestion: Suggestion }>(`/JellyPoll/Polls/${pollId}/Suggestions`, {
+    request<{ Suggestion: Suggestion }>(`/JellyPoll/Polls/${pollId}/Suggestions`, {
       method: 'POST',
       body: JSON.stringify({ itemId })
     }),
@@ -70,7 +72,7 @@ export const jellypoll = {
     request<void>(`/JellyPoll/Polls/${pollId}/Suggestions/${suggestionId}`, { method: 'DELETE' }),
 
   saveBallot: (pollId: string, suggestionIds: string[]) =>
-    request<{ stateVersion: number; savedCount: number }>(`/JellyPoll/Polls/${pollId}/Ballot`, {
+    request<{ StateVersion: number; SavedCount: number }>(`/JellyPoll/Polls/${pollId}/Ballot`, {
       method: 'PUT',
       body: JSON.stringify({ suggestionIds })
     }),
@@ -88,7 +90,7 @@ export const jellypoll = {
 
   /** 204 when unchanged; 200 with new stateVersion when changed. */
   state: (pollId: string, version: number) =>
-    request<{ stateVersion: number }>(`/JellyPoll/Polls/${pollId}/State?v=${version}`, { method: 'GET' }),
+    request<{ StateVersion: number }>(`/JellyPoll/Polls/${pollId}/State?v=${version}`, { method: 'GET' }),
 
   installMenuLink: () =>
     request<{ installed: boolean }>('/JellyPoll/Admin/MenuLink', {

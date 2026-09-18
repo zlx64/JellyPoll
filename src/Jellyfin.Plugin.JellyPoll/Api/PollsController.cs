@@ -47,7 +47,7 @@ public sealed class PollsController : JellyPollControllerBase
             p.CreatedByName,
             p.Poll.ClosedAt,
             counts.TryGetValue(p.Poll.Id, out var c) ? c : 0)).ToList();
-        return Ok(new { polls = list });
+        return Ok(new { Polls = list, IsAdmin = _polls.IsAdmin(user) });
     }
 
     // ---------- 4.2 create ----------
@@ -122,7 +122,7 @@ public sealed class PollsController : JellyPollControllerBase
         try
         {
             var suggestion = _polls.AddSuggestion(user, id, itemId);
-            return StatusCode(201, new { suggestion = _polls.ToSuggestionDto(suggestion) });
+            return StatusCode(201, new { Suggestion = _polls.ToSuggestionDto(suggestion) });
         }
         catch (PollNotFoundException) { return NotFoundError(); }
         catch (PollClosedException) { return Error(409, "poll_closed", "Poll is closed."); }
@@ -186,7 +186,7 @@ public sealed class PollsController : JellyPollControllerBase
         try
         {
             var saved = _polls.SaveBallot(user, id, ids);
-            return Ok(new { stateVersion = _polls.StateVersion(id), savedCount = saved });
+            return Ok(new { StateVersion = _polls.StateVersion(id), SavedCount = saved });
         }
         catch (PollNotFoundException) { return NotFoundError(); }
         catch (PollClosedException) { return Error(409, "poll_closed", "Poll is closed."); }
@@ -235,6 +235,8 @@ public sealed class PollsController : JellyPollControllerBase
 
     // ---------- 4.9 delete ----------
 
+    // ---------- 4.9 delete ----------
+
     [HttpDelete("Polls/{id:guid}")]
     public async Task<ActionResult> DeletePoll(Guid id)
     {
@@ -251,6 +253,28 @@ public sealed class PollsController : JellyPollControllerBase
         }
         catch (PollNotFoundException) { return NotFoundError(); }
         catch (AccessDeniedException) { return ForbiddenError(); }
+    }
+
+    // ---------- admin: delete all closed polls ----------
+
+    [HttpDelete("Polls/Closed")]
+    public async Task<ActionResult<object>> DeleteAllClosedPolls()
+    {
+        var user = await ResolveUserAsync().ConfigureAwait(false);
+        if (user is null)
+        {
+            return UnauthorizedError();
+        }
+
+        try
+        {
+            var count = _polls.DeleteAllClosedPolls(user);
+            return Ok(new { DeletedCount = count });
+        }
+        catch (AccessDeniedException)
+        {
+            return ForbiddenError();
+        }
     }
 
     // ---------- 4.10 results ----------
@@ -283,7 +307,7 @@ public sealed class PollsController : JellyPollControllerBase
         try
         {
             var current = _polls.StateVersion(id);
-            return v.HasValue && v.Value == current ? NoContent() : Ok(new { stateVersion = current });
+            return v.HasValue && v.Value == current ? NoContent() : Ok(new { StateVersion = current });
         }
         catch (PollNotFoundException)
         {
@@ -307,8 +331,20 @@ public sealed class PollsController : JellyPollControllerBase
             return ForbiddenError();
         }
 
-        var installed = _menuLinkInstaller.SetMenuLink(request?.Install ?? true);
-        return Ok(new { installed, webConfigPath = _menuLinkInstaller.WebConfigPath });
+        try
+        {
+            var installed = _menuLinkInstaller.SetMenuLink(request?.Install ?? true);
+            return Ok(new { Installed = installed, WebConfigPath = _menuLinkInstaller.WebConfigPath });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            // Read-only webroot (Docker, bind mounts) — degrade gracefully (doc 06 §4 step 5).
+            return Ok(new { Installed = false, WebConfigPath = _menuLinkInstaller.WebConfigPath, Error = ex.Message, Manual = true });
+        }
+        catch (FileNotFoundException ex)
+        {
+            return Ok(new { Installed = false, WebConfigPath = _menuLinkInstaller.WebConfigPath, Error = ex.Message, Manual = true });
+        }
     }
 
     // ---------- helpers ----------

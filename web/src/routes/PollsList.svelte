@@ -4,6 +4,7 @@
   import type { PollSummary } from '../lib/types';
 
   let polls = $state<PollSummary[] | null>(null);
+  let isAdmin = $state(false);
   let error = $state('');
   let showNewDialog = $state(false);
   let newTitle = $state('');
@@ -11,13 +12,25 @@
   let newSeries = $state(true);
   let creating = $state(false);
 
-  const openPolls = $derived(polls?.filter((p) => p.status === 'open') ?? []);
-  const closedPolls = $derived(polls?.filter((p) => p.status === 'closed') ?? []);
+  const openPolls = $derived(polls?.filter((p) => p.Status === 'open') ?? []);
+  const closedPolls = $derived(polls?.filter((p) => p.Status === 'closed') ?? []);
 
   async function load() {
     try {
-      polls = (await jellypoll.listPolls()).polls;
+      const res = await jellypoll.listPolls();
+      polls = res.Polls;
+      isAdmin = res.IsAdmin;
       error = '';
+    } catch (e) {
+      error = e instanceof Error ? e.message : String(e);
+    }
+  }
+
+  async function deleteClosedPolls() {
+    if (!confirm(`Delete all closed polls (${closedPolls.length})? This cannot be undone.`)) return;
+    try {
+      await jellypoll.deleteAllClosedPolls();
+      await load();
     } catch (e) {
       error = e instanceof Error ? e.message : String(e);
     }
@@ -36,7 +49,7 @@
     creating = true;
     try {
       const detail = await jellypoll.createPoll(newTitle.trim(), newEpisodes, newSeries);
-      location.hash = '#/poll/' + detail.poll.id;
+      location.hash = '#/poll/' + detail.Poll.Id;
     } catch (e) {
       error = e instanceof ApiError || e instanceof Error ? e.message : String(e);
       creating = false;
@@ -59,6 +72,7 @@
       <div class="card dialog">
         <h3>New poll</h3>
         <input type="text" placeholder="Poll title (e.g. Friday Night)" bind:value={newTitle} maxlength="100" />
+        <label><input type="checkbox" checked disabled /> Allow movies (always)</label>
         <label><input type="checkbox" bind:checked={newEpisodes} /> Allow TV episodes</label>
         <label><input type="checkbox" bind:checked={newSeries} /> Allow TV series</label>
         <div class="actions">
@@ -76,12 +90,12 @@
   {:else}
     {#if openPolls.length > 0}
       <h2 class="section">Active</h2>
-      {#each openPolls as poll (poll.id)}
-        <a class="card pollcard" href={'#/poll/' + poll.id}>
-          <div class="title">{poll.title}</div>
+      {#each openPolls as poll (poll.Id)}
+        <a class="card pollcard" href={'#/poll/' + poll.Id}>
+          <div class="title">{poll.Title}</div>
           <div class="dim">
-            open · {poll.suggestionCount} suggestion{poll.suggestionCount === 1 ? '' : 's'} ·
-            {poll.voterCount} voted · by {poll.createdByName} · {fmtDate(poll.createdAt)}
+            open · {poll.SuggestionCount} suggestion{poll.SuggestionCount === 1 ? '' : 's'} ·
+            {poll.VoterCount} voted · by {poll.CreatedByName} · {fmtDate(poll.CreatedAt)}
           </div>
           <div class="go">Open poll →</div>
         </a>
@@ -89,11 +103,16 @@
     {/if}
 
     {#if closedPolls.length > 0}
-      <h2 class="section">Past</h2>
-      {#each closedPolls as poll (poll.id)}
-        <a class="card pollcard closed" href={'#/poll/' + poll.id}>
-          <div class="title">{poll.title}</div>
-          <div class="dim">closed {poll.closedAt ? fmtDate(poll.closedAt) : ''} · by {poll.createdByName}</div>
+      <div class="pastheader">
+        <h2 class="section">Past</h2>
+        {#if isAdmin}
+          <button class="warning" onclick={deleteClosedPolls}>Delete all closed</button>
+        {/if}
+      </div>
+      {#each closedPolls as poll (poll.Id)}
+        <a class="card pollcard closed" href={'#/poll/' + poll.Id}>
+          <div class="title">{poll.Title}</div>
+          <div class="dim">closed {poll.ClosedAt ? fmtDate(poll.ClosedAt) : ''} · by {poll.CreatedByName}</div>
           <div class="go">Results →</div>
         </a>
       {/each}
@@ -110,8 +129,11 @@
   .header { display: flex; justify-content: space-between; align-items: center; }
   h1 { margin: 0; font-size: 1.4rem; }
   .section { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; color: var(--jp-text-dim); margin: 0.8rem 0 0; }
+  .pastheader { display: flex; justify-content: space-between; align-items: center; }
+  .pastheader button.warning { padding: 0.3rem 0.6rem; font-size: 0.8rem; background: #f2b01e; color: #222; }
+  .pastheader button.warning:hover { background: #d99e18; }
   .pollcard { display: block; text-decoration: none; color: inherit; }
-  .pollcard .title { font-weight: 600; font-size: 1.05rem; }
+  .pollcard .Title { font-weight: 600; font-size: 1.05rem; }
   .pollcard .go { color: var(--jp-accent); margin-top: 0.3rem; font-size: 0.9rem; }
   .pollcard.closed { opacity: 0.8; }
   .overlay {

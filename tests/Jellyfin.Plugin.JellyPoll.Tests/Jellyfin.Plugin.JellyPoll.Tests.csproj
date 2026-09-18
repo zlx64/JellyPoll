@@ -16,6 +16,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Jellyfin assemblies are needed at test runtime (plugin references them with ExcludeAssets=runtime) -->
+    <PackageReference Include="Jellyfin.Controller" Version="12.1.0" />
+    <PackageReference Include="Jellyfin.Model" Version="12.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Jellyfin.Plugin.JellyPoll\Jellyfin.Plugin.JellyPoll.csproj" />
   </ItemGroup>
 

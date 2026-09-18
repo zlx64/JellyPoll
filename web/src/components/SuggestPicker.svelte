@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { jellyfin } from '../lib/api';
+  import { jellyfin, jellypoll } from '../lib/api';
   import type { JellyfinSearchItem, PollMeta } from '../lib/types';
   import Poster from './Poster.svelte';
 
@@ -12,8 +12,8 @@
 
   const includeTypes = [
     'Movie',
-    ...(poll.allowEpisodes ? ['Episode'] : []),
-    ...(poll.allowSeries ? ['Series'] : [])
+    ...(poll.AllowEpisodes ? ['Episode'] : []),
+    ...(poll.AllowSeries ? ['Series'] : [])
   ].join(',');
 
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
@@ -40,8 +40,8 @@
   async function suggest(item: JellyfinSearchItem) {
     busyItemId = item.Id;
     try {
-      await jellyfin.addSuggestion(poll.id, item.Id);
-      onAdded(`"${item.Name}" added to the poll.`, false);
+      const res = await jellypoll.addSuggestion(poll.Id, item.Id);
+      onAdded(`"${item.Name}" added to the poll.`, false, res.Suggestion.Id);
       results = results.filter((r) => r.Id !== item.Id);
     } catch (e) {
       onAdded(e instanceof Error ? e.message : String(e), true);
@@ -97,6 +97,6 @@
     text-align: left;
   }
   .label { padding: 0.2rem 0.3rem; }
-  .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.85rem; }
+  .Name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.85rem; }
   .label .dim { font-size: 0.75rem; }
 </style>

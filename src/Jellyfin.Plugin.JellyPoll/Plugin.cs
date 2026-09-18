@@ -1,5 +1,4 @@
 using Jellyfin.Plugin.JellyPoll.Configuration;
-using Jellyfin.Plugin.JellyPoll.Data;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
 using MediaBrowser.Model.Plugins;
@@ -7,9 +6,9 @@ using MediaBrowser.Model.Plugins;
 namespace Jellyfin.Plugin.JellyPoll;
 
 /// <summary>
-/// Plugin entry point. Owns the SQLite repository (created at construction so
-/// PluginServiceRegistrator can register the instance) and exposes the dashboard
-/// configuration page via IHasWebPages (doc 06 §2).
+/// Plugin entry point. Exposes the dashboard configuration page via IHasWebPages (doc 06 §2).
+/// Services (SQLite repository etc.) are registered by PluginServiceRegistrator — independent
+/// of this instance's construction order.
 /// </summary>
 public sealed class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
 {
@@ -17,22 +16,10 @@ public sealed class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
         : base(applicationPaths, xmlSerializer)
     {
         Instance = this;
-        Repository = new SqlitePollRepository(new Db(applicationPaths));
-        try
-        {
-            Repository.Initialize();
-        }
-        catch (Exception ex)
-        {
-            // Storage failure disables functionality; API responds 503 (doc 02 §5).
-            Console.Error.WriteLine($"[JellyPoll] storage init failed: {ex.Message}");
-        }
     }
 
-    /// <summary>Singleton access for the service registrator and config-dependent services.</summary>
+    /// <summary>Singleton access for config-dependent services.</summary>
     public static Plugin? Instance { get; private set; }
-
-    public SqlitePollRepository Repository { get; }
 
     /// <inheritdoc />
     public override string Name => "JellyPoll";
@@ -49,8 +36,13 @@ public sealed class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
         new PluginPageInfo
         {
             Name = "jellypoll",
-            DisplayName = "JellyPoll",
-            EmbeddedResourcePath = "Jellyfin.Plugin.JellyPoll.Configuration.configPage.html"
+            DisplayName = "Movie Polls",
+            EmbeddedResourcePath = "Jellyfin.Plugin.JellyPoll.Configuration.configPage.html",
+            // Officially renders in the web client's navigation (dashboard drawer "Plugins"
+            // section) — jellyfin-web fetches pages with enableInMainMenu=true and links to
+            // /configurationpage?name=jellypoll. No webroot file modification needed.
+            EnableInMainMenu = true,
+            MenuIcon = "how_to_vote"
         }
     };
 }

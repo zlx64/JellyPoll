@@ -8,16 +8,16 @@
 </script>
 
 <div class="standings">
-  {#each standings as entry (entry.suggestionId)}
-    <div class="row card" class:missing={entry.itemMissing} class:gold={entry.rank === 1 && closed}>
-      <span class="medal" class:gold-text={entry.rank === 1}>{medalFor(entry.rank) || entry.rank}</span>
-      <Poster itemId={entry.itemId} name={entry.name} size={40} />
+  {#each standings as entry (entry.SuggestionId)}
+    <div class="row card" class:missing={entry.ItemMissing} class:gold={entry.Rank === 1 && closed}>
+      <span class="medal" class:gold-text={entry.Rank === 1}>{medalFor(entry.Rank) || entry.Rank}</span>
+      <Poster itemId={entry.ItemId} name={entry.Name} size={40} />
       <div class="info">
-        <div class="name">{entry.name} <span class="dim">{entry.year ?? ''}</span></div>
+        <div class="name">{entry.Name} <span class="dim">{entry.Year ?? ''}</span></div>
         <div class="dim">
-          {entry.points} pts · {entry.firstPlaceCount} first{entry.firstPlaceCount === 1 ? '' : 's'} · {entry.voterCount} voter{entry.voterCount === 1 ? '' : 's'}
-          {#if entry.itemMissing}· no longer in library{/if}
-          {#if entry.rank === 1 && closed}<strong> · Watch next</strong>{/if}
+          {entry.Points} pts · {entry.FirstPlaceCount} first{entry.FirstPlaceCount === 1 ? '' : 's'} · {entry.VoterCount} voter{entry.VoterCount === 1 ? '' : 's'}
+          {#if entry.ItemMissing}· no longer in library{/if}
+          {#if entry.Rank === 1 && closed}<strong> · Watch next</strong>{/if}
         </div>
       </div>
     </div>
@@ -27,10 +27,10 @@
 </div>
 
 <style>
-  .standings { display: flex; flex-direction: column; gap: 0.5rem; }
+  .Standings { display: flex; flex-direction: column; gap: 0.5rem; }
   .row { display: flex; align-items: center; gap: 0.7rem; padding: 0.5rem; }
   .row.missing { opacity: 0.45; }
-  .row.gold { border: 1px solid var(--jp-gold); }
+  .row.Gold { border: 1px solid var(--jp-gold); }
   .medal {
     width: 2rem;
     text-align: center;
@@ -38,8 +38,8 @@
     color: var(--jp-text-dim);
     flex-shrink: 0;
   }
-  .gold-text { color: var(--jp-gold); }
+  .Gold-text { color: var(--jp-gold); }
   .info { min-width: 0; }
-  .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .Name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .info .dim { font-size: 0.8rem; }
 </style>

@@ -10,7 +10,7 @@ namespace Jellyfin.Plugin.JellyPoll.Data;
 /// Writes run under an app-level write lock inside transactions;
 /// state_version is bumped in the same transaction as every mutation.
 /// </summary>
-public sealed class SqlitePollRepository
+public sealed class SqlitePollRepository : IPollRepository
 {
     private readonly Db _db;
     private readonly SemaphoreSlim _writeLock = new(1, 1);
@@ -163,6 +163,30 @@ public sealed class SqlitePollRepository
             conn.Execute("DELETE FROM suggestions WHERE poll_id = @id;", new { id = pollId.ToString() }, tx);
             conn.Execute("DELETE FROM polls WHERE id = @id;", new { id = pollId.ToString() }, tx);
             tx.Commit();
+        }
+        finally
+        {
+            _writeLock.Release();
+        }
+    }
+
+    public int DeleteClosedPolls()
+    {
+        _writeLock.Wait();
+        try
+        {
+            using var conn = _db.Open();
+            using var tx = conn.BeginTransaction();
+            var count = (int)conn.ExecuteScalar<long>(
+                "SELECT COUNT(*) FROM polls WHERE status = 1;", tx);
+            conn.Execute(
+                "DELETE FROM ballot_entries WHERE ballot_id IN (SELECT id FROM ballots WHERE poll_id IN (SELECT id FROM polls WHERE status = 1));",
+                transaction: tx);
+            conn.Execute("DELETE FROM ballots WHERE poll_id IN (SELECT id FROM polls WHERE status = 1);", transaction: tx);
+            conn.Execute("DELETE FROM suggestions WHERE poll_id IN (SELECT id FROM polls WHERE status = 1);", transaction: tx);
+            conn.Execute("DELETE FROM polls WHERE status = 1;", transaction: tx);
+            tx.Commit();
+            return count;
         }
         finally
         {
@@ -409,7 +433,8 @@ public sealed class SqlitePollRepository
 
     // ---------- maintenance ----------
 
-    /// <summary>Removes suggestions whose library item no longer exists. Returns removed count.</summary>
+    /// <summary>Removes suggestions whose library item no longer exists. Returns removed count.
+    /// state_version is bumped for every poll whose suggestions were touched.</summary>
     public int RemoveSuggestions(IReadOnlyList<Guid> suggestionIds)
     {
         if (suggestionIds.Count == 0)
@@ -422,6 +447,20 @@ public sealed class SqlitePollRepository
         {
             using var conn = _db.Open();
             using var tx = conn.BeginTransaction();
+
+            // Collect the affected polls BEFORE deletion so polls whose suggestions are
+            // entirely removed still get a state bump.
+            var pollIds = new List<Guid>();
+            foreach (var sid in suggestionIds)
+            {
+                var pollId = conn.ExecuteScalar<string?>(
+                    "SELECT poll_id FROM suggestions WHERE id = @s;", new { s = sid.ToString() });
+                if (pollId is not null && Guid.TryParse(pollId, out var g))
+                {
+                    pollIds.Add(g);
+                }
+            }
+
             var removed = 0;
             foreach (var sid in suggestionIds)
             {
@@ -429,7 +468,11 @@ public sealed class SqlitePollRepository
                 removed += conn.Execute("DELETE FROM suggestions WHERE id = @s;", new { s = sid.ToString() }, tx);
             }
 
-            BumpStateVersionForAll(conn, tx);
+            foreach (var pollId in pollIds.Distinct())
+            {
+                BumpStateVersion(conn, tx, pollId);
+            }
+
             tx.Commit();
             return removed;
         }
@@ -438,7 +481,4 @@ public sealed class SqlitePollRepository
             _writeLock.Release();
         }
     }
-
-    private static void BumpStateVersionForAll(SqliteConnection conn, IDbTransaction tx)
-        => conn.Execute("UPDATE polls SET state_version = state_version + 1 WHERE id IN (SELECT DISTINCT poll_id FROM suggestions UNION SELECT DISTINCT poll_id FROM ballots);", transaction: tx);
 }

@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Web\**\*" Prefix="Jellyfin.Plugin.JellyPoll.Web" />
+    <EmbeddedResource Include="Configuration\configPage.html" />
   </ItemGroup>
 
 </Project>

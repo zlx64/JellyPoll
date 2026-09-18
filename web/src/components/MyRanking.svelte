@@ -16,7 +16,7 @@
 
   let dragIndex = $state<number | null>(null);
 
-  const byId = $derived(new Map(detail.suggestions.map((s) => [s.id, s])));
+  const byId = $derived(new Map(detail.Suggestions.map((s) => [s.Id, s])));
 
   function move(index: number, delta: number) {
     const target = index + delta;
@@ -65,9 +65,9 @@
           >
             <span class="rank">{index + 1}</span>
             <span class="handle" title="Drag to reorder">⋮⋮</span>
-            <Poster itemId={s.itemId} name={s.name} size={40} />
+            <Poster itemId={s.ItemId} name={s.Name} size={40} />
             <div class="info">
-              <div class="name">{s.name}</div>
+              <div class="name">{s.Name}</div>
             </div>
             <button title="Up" onclick={() => move(index, -1)} disabled={index === 0}>↑</button>
             <button title="Down" onclick={() => move(index, 1)} disabled={index === myBallot.length - 1}>↓</button>
@@ -89,7 +89,7 @@
     cursor: grab;
   }
   .row.dragging { opacity: 0.5; }
-  .rank {
+  .Rank {
     width: 1.8rem;
     height: 1.8rem;
     border-radius: 50%;
@@ -102,6 +102,6 @@
   }
   .handle { color: var(--jp-text-dim); letter-spacing: -2px; }
   .info { flex: 1; min-width: 0; }
-  .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .Name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .row button { padding: 0.25rem 0.55rem; }
 </style>

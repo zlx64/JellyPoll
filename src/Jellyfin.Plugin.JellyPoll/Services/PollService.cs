@@ -15,20 +15,23 @@ namespace Jellyfin.Plugin.JellyPoll.Services;
 /// </summary>
 public sealed class PollService
 {
-    private readonly SqlitePollRepository _repo;
-    private readonly LibraryAccessValidator _library;
-    private readonly IUserManager _userManager;
+    private readonly IPollRepository _repo;
+    private readonly ILibraryAccessValidator _library;
+    private readonly IUserNameResolver _userNames;
+    private readonly IConfigurationAccessor _config;
     private readonly ILogger<PollService> _logger;
 
     public PollService(
-        SqlitePollRepository repo,
-        LibraryAccessValidator library,
-        IUserManager userManager,
+        IPollRepository repo,
+        ILibraryAccessValidator library,
+        IUserNameResolver userNames,
+        IConfigurationAccessor config,
         ILogger<PollService> logger)
     {
         _repo = repo;
         _library = library;
-        _userManager = userManager;
+        _userNames = userNames;
+        _config = config;
         _logger = logger;
     }
 
@@ -38,7 +41,7 @@ public sealed class PollService
         => poll.CreatedBy == user.Id || IsAdmin(user);
 
     private string DisplayName(Guid userId)
-        => _userManager.GetUserById(userId)?.Username ?? "Unknown user";
+        => _userNames.GetName(userId);
 
     // ---------- polls ----------
 
@@ -103,6 +106,19 @@ public sealed class PollService
         _repo.DeletePoll(pollId);
     }
 
+    /// <summary>Admin-only bulk cleanup of closed polls. Returns the number deleted.</summary>
+    public int DeleteAllClosedPolls(User user)
+    {
+        if (!IsAdmin(user))
+        {
+            throw new AccessDeniedException();
+        }
+
+        var count = _repo.DeleteClosedPolls();
+        _logger.LogInformation("Deleted {Count} closed polls (by {User})", count, user.Username);
+        return count;
+    }
+
     // ---------- suggestions ----------
 
     public Data.SuggestionRow AddSuggestion(User user, Guid pollId, Guid itemId)
@@ -115,7 +131,7 @@ public sealed class PollService
 
         var item = _library.ResolveItem(itemId) ?? throw new SuggestionNotFoundException();
 
-        var typeName = LibraryAccessValidator.TypeName(item)
+        var typeName = _library.GetTypeName(item)
             ?? throw new ValidationException("This item type cannot be suggested.");
         if (typeName == "Episode" && !poll.AllowEpisodes)
         {
@@ -132,7 +148,7 @@ public sealed class PollService
             throw new AccessDeniedException();
         }
 
-        var max = Plugin.Instance?.Configuration.MaxSuggestionsPerUser ?? 0;
+        var max = _config.Current.MaxSuggestionsPerUser;
         if (max > 0 && _repo.CountSuggestionsByUser(pollId, user.Id) >= max)
         {
             throw new SuggestionLimitReachedException(max);
@@ -219,13 +235,11 @@ public sealed class PollService
         ts, "yyyy-MM-dd'T'HH:mm:ss'Z'", System.Globalization.CultureInfo.InvariantCulture,
         System.Globalization.DateTimeStyles.AssumeUniversal);
 
-    // ---------- helpers used by controllers ----------
+    // ---------- controller-facing projections ----------
 
     public string UserName(Guid userId) => DisplayName(userId);
 
     public int StateVersion(Guid pollId) => _repo.GetStateVersion(pollId);
-
-    // ---------- controller-facing projections ----------
 
     public IReadOnlyList<(Data.PollRow Poll, int SuggestionCount, int VoterCount, string CreatedByName)> ListAll()
     {
@@ -265,7 +279,7 @@ public sealed class PollService
     public Api.PollDetailDto BuildDetail(User user, Guid pollId)
     {
         var poll = GetPoll(pollId);
-        var includeLive = Plugin.Instance?.Configuration.ShowLiveStandings ?? true;
+        var includeLive = _config.Current.ShowLiveStandings;
         var suggestions = _repo.ListSuggestions(pollId).Select(ToSuggestionDto).ToList();
         var standings = GetStandings(pollId, includeLive)
             .Select(e => new Api.StandingEntryDto(

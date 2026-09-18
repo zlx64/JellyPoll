@@ -1,72 +1,73 @@
-// DTOs mirroring docs/04-API.md §3 (camelCase JSON).
+// DTOs mirroring the live Jellyfin 12.1 wire format (PascalCase — verified against a
+// production 12.1 server; the camelCase assumption from docs/04 was wrong).
 
 export type ItemType = 'Movie' | 'Episode' | 'Series';
 
 export interface PollMeta {
-  id: string;
-  title: string;
-  status: 'open' | 'closed';
-  createdAt: string;
-  closedAt: string | null;
-  createdById: string;
-  createdByName: string;
-  allowEpisodes: boolean;
-  allowSeries: boolean;
-  stateVersion: number;
+  Id: string;
+  Title: string;
+  Status: 'open' | 'closed';
+  CreatedAt: string;
+  ClosedAt: string | null;
+  CreatedById: string;
+  CreatedByName: string;
+  AllowEpisodes: boolean;
+  AllowSeries: boolean;
+  StateVersion: number;
 }
 
 export interface PollSummary {
-  id: string;
-  title: string;
-  status: 'open' | 'closed';
-  suggestionCount: number;
-  voterCount: number;
-  createdAt: string;
-  createdById: string;
-  createdByName: string;
-  closedAt: string | null;
-  myBallotCount: number;
+  Id: string;
+  Title: string;
+  Status: 'open' | 'closed';
+  SuggestionCount: number;
+  VoterCount: number;
+  CreatedAt: string;
+  CreatedById: string;
+  CreatedByName: string;
+  ClosedAt: string | null;
+  MyBallotCount: number;
 }
 
 export interface Suggestion {
-  id: string;
-  itemId: string;
-  itemType: ItemType;
-  name: string;
-  year: number | null;
-  suggestedById: string;
-  suggestedByName: string;
-  suggestedAt: string;
-  itemMissing: boolean;
+  Id: string;
+  ItemId: string;
+  ItemType: ItemType;
+  Name: string;
+  Year: number | null;
+  SuggestedById: string;
+  SuggestedByName: string;
+  SuggestedAt: string;
+  ItemMissing: boolean;
 }
 
 export interface StandingEntry {
-  rank: number;
-  suggestionId: string;
-  points: number;
-  firstPlaceCount: number;
-  voterCount: number;
-  itemMissing: boolean;
-  itemId: string;
-  itemType: string;
-  name: string;
-  year: number | null;
+  Rank: number;
+  SuggestionId: string;
+  Points: number;
+  FirstPlaceCount: number;
+  VoterCount: number;
+  ItemMissing: boolean;
+  ItemId: string;
+  ItemType: string;
+  Name: string;
+  Year: number | null;
 }
 
 export interface PollDetail {
-  poll: PollMeta;
-  suggestions: Suggestion[];
-  myBallot: string[];
-  standings: StandingEntry[];
-  isCreator: boolean;
-  isAdmin: boolean;
+  Poll: PollMeta;
+  Suggestions: Suggestion[];
+  MyBallot: string[];
+  Standings: StandingEntry[];
+  IsCreator: boolean;
+  IsAdmin: boolean;
 }
 
 export interface Results {
-  standings: StandingEntry[];
-  gold: StandingEntry | null;
-  silver: StandingEntry | null;
-  bronze: StandingEntry | null;
+  Standings: StandingEntry[];
+  Gold: StandingEntry | null;
+  Silver: StandingEntry | null;
+  Bronze: StandingEntry | null;
 }
 
 export interface JellyfinSearchItem {

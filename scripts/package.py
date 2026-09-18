@@ -39,14 +39,18 @@ def main() -> None:
     zip_path = artifacts / f"jellypoll_{args.version}.zip"
 
     files = sorted(f for f in publish.rglob("*") if f.is_file())
+    # Exclude native runtime assets: the Jellyfin PluginManager scans every .dll in the
+    # plugin folder and chokes on native binaries (BadImageFormatException -> plugin disabled).
+    # The server process already initializes the e_sqlite3 provider globally.
+    files = [f for f in files if "runtimes" not in f.relative_to(publish).parts]
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
         for f in files:
             zf.write(f, f.relative_to(publish).as_posix())
 
-    checksum = hashlib.sha256(zip_path.read_bytes()).hexdigest()
+    checksum = hashlib.md5(zip_path.read_bytes()).hexdigest().upper()  # Jellyfin verifies MD5 (uppercase), not SHA-256
 
     manifest_path = Path("manifest.json")
-    manifest: list = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else []
+    manifest: list = json.loads(manifest_path.read_text(encoding="utf-8-sig")) if manifest_path.exists() else []
 
     entry = next((p for p in manifest if p.get("guid") == GUID), None)
     if entry is None:

@@ -51,7 +51,17 @@ public sealed class MenuLinkInstaller
         }
         else if (install)
         {
-            BackupOnce(path);
+            // Best-effort backup: a read-only directory (common in Docker) must not block
+            // the write itself — config.json may still be writable even if the folder isn't.
+            try
+            {
+                BackupOnce(path);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // no backup — continue
+            }
+
             menuLinks.Add(new JsonObject
             {
                 ["name"] = MenuName,

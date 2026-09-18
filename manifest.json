@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "guid": "3734440f-4b20-4c3a-86a3-d931b45b7248",
     "name": "JellyPoll",
@@ -6,6 +6,16 @@
     "overview": "Group movie polling with ranked ballots and a gold/silver/bronze podium.",
     "owner": "zlx64",
     "category": "General",
-    "versions": []
+    "versions": [
+      {
+        "version": "1.0.15.0",
+        "changelog": "See release notes at https://github.com/zlx64/JellyPoll/releases/tag/v1.0.15",
+        "targetAbi": "12.1.0.0",
+        "framework": "net10.0",
+        "sourceUrl": "http://192.168.31.16:7000/jellypoll_1.0.15.0.zip",
+        "checksum": "D40CB060449C163D8185011A817A4820",
+        "timestamp": "2026-09-18T22:49:42Z"
+      }
+    ]
   }
 ]

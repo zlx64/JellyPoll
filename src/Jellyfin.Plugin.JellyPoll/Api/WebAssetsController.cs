@@ -6,6 +6,13 @@ namespace Jellyfin.Plugin.JellyPoll.Api;
 /// Serves the embedded SPA at /JellyPoll/Web/** (doc 04 §4.12, doc 05 §9).
 /// Anonymous by design: assets contain no data; the SPA authenticates API calls itself.
 /// </summary>
+/// <remarks>
+/// Route is scoped to /JellyPoll/Web only. Third-party plugins (FileTransformation-based,
+/// e.g. Jellyfin Security) inject relative scripts like "../TwoFactorAuth/inject" into served
+/// HTML; under our subpath those resolve to /JellyPoll/TwoFactorAuth/... which 404s — harmless
+/// console noise only (the injected code is a no-op for our page). A /JellyPoll-level catch-all
+/// was tried (1.0.12.2) and REVERTED after the live server failed to finish startup with it.
+/// </remarks>
 [ApiController]
 [Route("JellyPoll/Web")]
 public sealed class WebAssetsController : ControllerBase
@@ -35,8 +42,7 @@ public sealed class WebAssetsController : ControllerBase
     {
         var assembly = typeof(Plugin).Assembly;
 
-        // Empty or unknown paths resolve to index.html (hash routing needs no server fallbacks).
-        var relative = string.IsNullOrWhiteSpace(path) ? "index.html" : path.TrimStart('/');
+        var relative = string.IsNullOrWhiteSpace(path) ? "index.html" : path!.TrimStart('/');
 
         // Reject path traversal.
         if (relative.Contains("..") || relative.Contains('\\'))
@@ -45,22 +51,17 @@ public sealed class WebAssetsController : ControllerBase
         }
 
         var resourceName = ResourcePrefix + relative.Replace('/', '.');
-
         var stream = assembly.GetManifestResourceStream(resourceName);
-        if (stream is null && relative != "index.html")
-        {
-            // SPA fallback.
-            stream = assembly.GetManifestResourceStream(ResourcePrefix + "index.html");
-            relative = "index.html";
-        }
-
         if (stream is null)
         {
-            return NotFound();
+            // Unknown asset under /JellyPoll/Web/** — serve an empty script so stray
+            // third-party injections under our subpath are harmless no-ops.
+            Response.Headers.CacheControl = "no-store";
+            return File(Array.Empty<byte>(), "text/javascript");
         }
 
-        var ext = Path.GetExtension(relative);
-        var contentType = ContentTypes.TryGetValue(ext, out var ct) ? ct : "application/octet-stream";
+        var assetExt = Path.GetExtension(relative);
+        var contentType = ContentTypes.TryGetValue(assetExt, out var ct) ? ct : "application/octet-stream";
         var isIndex = relative == "index.html";
         Response.Headers.CacheControl = isIndex ? "no-store" : "public, max-age=604800, immutable";
         return File(stream, contentType);

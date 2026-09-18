@@ -1,0 +1,36 @@
+name: Build
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build web app (must run before dotnet — SPA is embedded)
+        working-directory: web
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build solution
+        run: dotnet build JellyPoll.slnx -c Release
+
+      - name: Test
+        run: dotnet test JellyPoll.slnx -c Release --no-build

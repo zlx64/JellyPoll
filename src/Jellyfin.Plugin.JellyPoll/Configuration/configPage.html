@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>JellyPoll</title>
+</head>
+<body>
+  <div data-role="page" id="jellypollConfigurationPage" class="page type-interior pluginConfigurationPage" data-require="javascript">
+    <div data-role="content">
+      <div class="content-primary">
+        <h2>JellyPoll</h2>
+        <form id="jellypollConfigForm">
+          <div class="checkboxContainer">
+            <label><input is="emby-checkbox" type="checkbox" id="chkEpisodes" /><span>Allow TV episodes in new polls by default</span></label>
+          </div>
+          <div class="checkboxContainer">
+            <label><input is="emby-checkbox" type="checkbox" id="chkSeries" /><span>Allow TV series in new polls by default</span></label>
+          </div>
+          <div class="inputContainer">
+            <label class="inputLabel" for="numMaxSuggestions">Max suggestions per user per poll (0 = unlimited)</label>
+            <input is="emby-input" type="number" min="0" step="1" id="numMaxSuggestions" />
+          </div>
+          <div class="checkboxContainer">
+            <label><input is="emby-checkbox" type="checkbox" id="chkLiveStandings" /><span>Show live standings while polls are open</span></label>
+          </div>
+          <div>
+            <button is="emby-button" type="submit" class="raised button-submit emby-button"><span>Save</span></button>
+            <button is="emby-button" type="button" id="btnInstallMenuLink" class="raised emby-button"><span>Add "Movie Polls" button to menu</span></button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <script type="text/javascript">
+      (function () {
+        var pluginId = '3734440f-4b20-4c3a-86a3-d931b45b7248';
+
+        function load() {
+          ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+            document.querySelector('#chkEpisodes').checked = config.DefaultAllowEpisodes !== false;
+            document.querySelector('#chkSeries').checked = config.DefaultAllowSeries !== false;
+            document.querySelector('#numMaxSuggestions').value = config.MaxSuggestionsPerUser || 0;
+            document.querySelector('#chkLiveStandings').checked = config.ShowLiveStandings !== false;
+          });
+        }
+
+        document.querySelector('#jellypollConfigForm').addEventListener('submit', function (e) {
+          e.preventDefault();
+          ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+            config.DefaultAllowEpisodes = document.querySelector('#chkEpisodes').checked;
+            config.DefaultAllowSeries = document.querySelector('#chkSeries').checked;
+            config.MaxSuggestionsPerUser = parseInt(document.querySelector('#numMaxSuggestions').value, 10) || 0;
+            config.ShowLiveStandings = document.querySelector('#chkLiveStandings').checked;
+            ApiClient.updatePluginConfiguration(pluginId, config).then(Dashboard.processServerConfigurationUpdateResult);
+          });
+          return false;
+        });
+
+        document.querySelector('#btnInstallMenuLink').addEventListener('click', function () {
+          fetch(ApiClient.getUrl('/JellyPoll/Admin/MenuLink'), {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'MediaBrowser Client="Jellyfin Web", Device="Dashboard", DeviceId="' + ApiClient.deviceId() + '", Version="1.0.0", Token="' + ApiClient.accessToken() + '"'
+            },
+            body: JSON.stringify({ install: true })
+          }).then(function (r) {
+            if (r.ok) { Dashboard.alert('Menu link installed. Reload the web client to see the "Movie Polls" button.'); }
+            else { Dashboard.alert('Could not write web config.json — add the menuLinks entry manually (see plugin README).'); }
+          });
+        });
+
+        document.querySelector('#jellypollConfigurationPage').addEventListener('pageshow', load);
+      })();
+    </script>
+  </div>
+</body>
+</html>

@@ -1,0 +1,11 @@
+﻿[
+  {
+    "guid": "3734440f-4b20-4c3a-86a3-d931b45b7248",
+    "name": "JellyPoll",
+    "description": "Group polls to choose what to watch together: suggest titles from the library, rank them, and crown the top 3.",
+    "overview": "Group movie polling with ranked ballots and a gold/silver/bronze podium.",
+    "owner": "zlx64",
+    "category": "General",
+    "versions": []
+  }
+]

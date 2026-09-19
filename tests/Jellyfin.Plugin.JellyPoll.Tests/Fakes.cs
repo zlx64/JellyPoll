@@ -181,6 +181,8 @@ public sealed class FakeLibrary : ILibraryAccessValidator
 {
     public Dictionary<Guid, BaseItem> Items { get; } = new();
     public HashSet<Guid> AccessibleToAllUsers { get; } = new();
+    public Dictionary<Guid, List<Guid>> Collections { get; } = new();
+    public List<Guid> CollectionLookups { get; } = new();
 
     public BaseItem? ResolveItem(Guid itemId) => Items.TryGetValue(itemId, out var i) ? i : null;
 
@@ -192,8 +194,31 @@ public sealed class FakeLibrary : ILibraryAccessValidator
         MediaBrowser.Controller.Entities.Movies.Movie => "Movie",
         MediaBrowser.Controller.Entities.TV.Episode => "Episode",
         MediaBrowser.Controller.Entities.TV.Series => "Series",
+        MediaBrowser.Controller.Entities.Movies.BoxSet => "Collection",
         _ => null
     };
+
+    public IReadOnlyList<BaseItem> GetCollectionMovies(Jellyfin.Database.Implementations.Entities.User user, Guid collectionId)
+    {
+        CollectionLookups.Add(collectionId);
+        if (!Collections.TryGetValue(collectionId, out var childIds))
+        {
+            return Array.Empty<BaseItem>();
+        }
+
+        return childIds
+            .Where(Items.ContainsKey)
+            .Where(id => AccessibleToAllUsers.Contains(id))
+            .Select(id => Items[id])
+            .OrderBy(m => m.SortName ?? m.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    public IReadOnlyList<BaseItem> ListCollections(Jellyfin.Database.Implementations.Entities.User user) =>
+        Items.Values
+            .Where(i => GetTypeName(i) == "Collection" && AccessibleToAllUsers.Contains(i.Id))
+            .OrderBy(i => i.SortName ?? i.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+            .ToList();
 }
 
 /// <summary>Fixed name resolver fake.</summary>

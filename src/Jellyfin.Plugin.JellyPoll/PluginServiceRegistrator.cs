@@ -2,9 +2,11 @@ using Jellyfin.Plugin.JellyPoll.Api;
 using Jellyfin.Plugin.JellyPoll.Data;
 using Jellyfin.Plugin.JellyPoll.Library;
 using Jellyfin.Plugin.JellyPoll.Menu;
+using Jellyfin.Plugin.JellyPoll.Nav;
 using Jellyfin.Plugin.JellyPoll.Services;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Plugins;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Jellyfin.Plugin.JellyPoll;
@@ -29,5 +31,10 @@ public sealed class PluginServiceRegistrator : IPluginServiceRegistrator
         serviceCollection.AddSingleton<IUserNameResolver, UserNameResolver>();
         serviceCollection.AddSingleton<PollService>();
         serviceCollection.AddSingleton<MenuLinkInstaller>();
+        // IStartupFilter: Jellyfin invokes it when building the host, letting the
+        // plugin add middleware (index.html nav injection) to the HTTP pipeline —
+        // the same mechanism JellyfinSecurity (TwoFactorAuth) uses. Must not
+        // depend on Plugin.Instance at registration time (see comment above).
+        serviceCollection.AddSingleton<IStartupFilter, JellyPollStartupFilter>();
     }
 }

@@ -8,6 +8,87 @@
     "category": "General",
     "versions": [
       {
+        "version": "1.0.17.7",
+        "changelog": "See release notes at https://github.com/zlx64/JellyPoll/releases/tag/v1.0.17",
+        "targetAbi": "12.1.0.0",
+        "framework": "net10.0",
+        "sourceUrl": "https://github.com/zlx64/JellyPoll/releases/download/v1.0.17/jellypoll_1.0.17.7.zip",
+        "checksum": "BE7549F531DC90C09F493B2A9FD2E268",
+        "timestamp": "2026-09-19T13:13:48Z"
+      },
+      {
+        "version": "1.0.17.6",
+        "changelog": "See release notes at https://github.com/zlx64/JellyPoll/releases/tag/v1.0.17",
+        "targetAbi": "12.1.0.0",
+        "framework": "net10.0",
+        "sourceUrl": "https://github.com/zlx64/JellyPoll/releases/download/v1.0.17/jellypoll_1.0.17.6.zip",
+        "checksum": "15D7EE207B4DFAE79DDB9DF73CB90BF1",
+        "timestamp": "2026-09-19T13:11:34Z"
+      },
+      {
+        "version": "1.0.17.5",
+        "changelog": "See release notes at https://github.com/zlx64/JellyPoll/releases/tag/v1.0.17",
+        "targetAbi": "12.1.0.0",
+        "framework": "net10.0",
+        "sourceUrl": "https://github.com/zlx64/JellyPoll/releases/download/v1.0.17/jellypoll_1.0.17.5.zip",
+        "checksum": "2CA00E642B9C329D62FC8EC7F8F454F7",
+        "timestamp": "2026-09-19T13:06:39Z"
+      },
+      {
+        "version": "1.0.17.4",
+        "changelog": "See release notes at https://github.com/zlx64/JellyPoll/releases/tag/v1.0.17",
+        "targetAbi": "12.1.0.0",
+        "framework": "net10.0",
+        "sourceUrl": "https://github.com/zlx64/JellyPoll/releases/download/v1.0.17/jellypoll_1.0.17.4.zip",
+        "checksum": "A79F41A792084338B6DE68008B77A683",
+        "timestamp": "2026-09-19T13:04:04Z"
+      },
+      {
+        "version": "1.0.17.3",
+        "changelog": "See release notes at https://github.com/zlx64/JellyPoll/releases/tag/v1.0.17",
+        "targetAbi": "12.1.0.0",
+        "framework": "net10.0",
+        "sourceUrl": "https://github.com/zlx64/JellyPoll/releases/download/v1.0.17/jellypoll_1.0.17.3.zip",
+        "checksum": "5BF4DD6D8099214880A59CF264A2F835",
+        "timestamp": "2026-09-19T12:57:06Z"
+      },
+      {
+        "version": "1.0.17.2",
+        "changelog": "See release notes at https://github.com/zlx64/JellyPoll/releases/tag/v1.0.17",
+        "targetAbi": "12.1.0.0",
+        "framework": "net10.0",
+        "sourceUrl": "https://github.com/zlx64/JellyPoll/releases/download/v1.0.17/jellypoll_1.0.17.2.zip",
+        "checksum": "1A27811E814F53CCB54CEA22DB86A7E5",
+        "timestamp": "2026-09-19T12:50:42Z"
+      },
+      {
+        "version": "1.0.17.1",
+        "changelog": "See release notes at https://github.com/zlx64/JellyPoll/releases/tag/v1.0.17",
+        "targetAbi": "12.1.0.0",
+        "framework": "net10.0",
+        "sourceUrl": "https://github.com/zlx64/JellyPoll/releases/download/v1.0.17/jellypoll_1.0.17.1.zip",
+        "checksum": "11FADF7C6454DF05CA7D1E93886E2ACB",
+        "timestamp": "2026-09-19T12:46:34Z"
+      },
+      {
+        "version": "1.0.17.0",
+        "changelog": "See release notes at https://github.com/zlx64/JellyPoll/releases/tag/v1.0.17",
+        "targetAbi": "12.1.0.0",
+        "framework": "net10.0",
+        "sourceUrl": "https://github.com/zlx64/JellyPoll/releases/download/v1.0.17/jellypoll_1.0.17.0.zip",
+        "checksum": "4EF5E6DF6EF2ADB0061475343C04D528",
+        "timestamp": "2026-09-19T12:44:48Z"
+      },
+      {
+        "version": "1.0.16.0",
+        "changelog": "See release notes at https://github.com/zlx64/JellyPoll/releases/tag/v1.0.16",
+        "targetAbi": "12.1.0.0",
+        "framework": "net10.0",
+        "sourceUrl": "https://github.com/zlx64/JellyPoll/releases/download/v1.0.16/jellypoll_1.0.16.0.zip",
+        "checksum": "C190813A3FB67E549083CA2FAA3A2EED",
+        "timestamp": "2026-09-19T11:53:34Z"
+      },
+      {
         "version": "1.0.15.0",
         "changelog": "See release notes at https://github.com/zlx64/JellyPoll/releases/tag/v1.0.15",
         "targetAbi": "12.1.0.0",

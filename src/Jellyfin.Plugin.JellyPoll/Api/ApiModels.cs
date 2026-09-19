@@ -71,6 +71,9 @@ public sealed record ResultsDto(
 
 public sealed record CreatePollRequest(string Title, bool? AllowEpisodes, bool? AllowSeries);
 
+/// <summary>Collection (BoxSet) browse row for the suggest picker.</summary>
+public sealed record CollectionInfoDto(string Id, string Name, int? Year, int MovieCount);
+
 public sealed record AddSuggestionRequest(string ItemId);
 
 public sealed record SaveBallotRequest(IReadOnlyList<string> SuggestionIds);

@@ -125,12 +125,13 @@
     load();
   }
 
-  async function onAdded(msg: string, isError: boolean, suggestionId?: string) {
+  async function onAdded(msg: string, isError: boolean, suggestionIds?: string[]) {
     showToast(msg, isError);
-    if (suggestionId && !myBallot.includes(suggestionId)) {
-      // Auto-append the suggester's own pick to their watch order and save immediately
+    const fresh = (suggestionIds ?? []).filter((id) => !myBallot.includes(id));
+    if (fresh.length > 0) {
+      // Auto-append the suggester's own picks to their watch order and save immediately
       // (no debounce — avoids races with the detail refetch).
-      myBallot = [...myBallot, suggestionId];
+      myBallot = [...myBallot, ...fresh];
       clearTimeout(saveTimer);
       saveTimer = undefined;
       try {

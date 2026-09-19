@@ -63,7 +63,14 @@ export const jellypoll = {
   getPoll: (id: string) => request<PollDetail>(`/JellyPoll/Polls/${id}`, { method: 'GET' }),
 
   addSuggestion: (pollId: string, itemId: string) =>
-    request<{ Suggestion: Suggestion }>(`/JellyPoll/Polls/${pollId}/Suggestions`, {
+    request<{
+      Suggestion?: Suggestion;
+      Suggestions?: Suggestion[];
+      SavedCount?: number;
+      SkippedExisting?: number;
+      SkippedOverLimit?: number;
+      CollectionName?: string;
+    }>(`/JellyPoll/Polls/${pollId}/Suggestions`, {
       method: 'POST',
       body: JSON.stringify({ itemId })
     }),
@@ -85,6 +92,11 @@ export const jellypoll = {
 
   deletePoll: (pollId: string) =>
     request<void>(`/JellyPoll/Polls/${pollId}`, { method: 'DELETE' }),
+
+  listCollections: (searchTerm?: string) =>
+    request<{
+      Items: { Id: string; Name: string; Year?: number | null; MovieCount: number }[];
+    }>(`/JellyPoll/Collections${searchTerm ? `?searchTerm=${encodeURIComponent(searchTerm)}` : ''}`, { method: 'GET' }),
 
   results: (pollId: string) => request<Results>(`/JellyPoll/Polls/${pollId}/Results`, { method: 'GET' }),
 

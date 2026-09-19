@@ -121,6 +121,106 @@ public sealed class PollService
 
     // ---------- suggestions ----------
 
+    /// <summary>
+    /// Outcome of Suggest(): either a single suggestion, or a collection expansion.
+    /// </summary>
+    public sealed record SuggestOutcome(
+        Data.SuggestionRow? Single,
+        IReadOnlyList<Data.SuggestionRow> CollectionAdded,
+        int CollectionSkippedExisting,
+        int CollectionSkippedOverLimit,
+        string? CollectionName);
+
+    /// <summary>
+    /// Adds an item to a poll's suggestions. Movie/Episode/Series are added as a single
+    /// suggestion; a Collection (BoxSet) is expanded — every movie inside it that is not
+    /// already in the poll is added as the suggester's suggestion.
+    /// </summary>
+    public SuggestOutcome Suggest(User user, Guid pollId, Guid itemId)
+    {
+        var item = _library.ResolveItem(itemId) ?? throw new SuggestionNotFoundException();
+        if (_library.GetTypeName(item) == "Collection")
+        {
+            var (added, skippedExisting, skippedOverLimit) = AddCollectionSuggestions(user, pollId, itemId, item.Name);
+            return new SuggestOutcome(null, added, skippedExisting, skippedOverLimit, item.Name);
+        }
+
+        return new SuggestOutcome(AddSuggestion(user, pollId, itemId), Array.Empty<Data.SuggestionRow>(), 0, 0, null);
+    }
+
+    /// <summary>Expands a collection into per-movie suggestions for the user.</summary>
+    private (List<Data.SuggestionRow> Added, int SkippedExisting, int SkippedOverLimit) AddCollectionSuggestions(
+        User user, Guid pollId, Guid itemId, string? collectionName)
+    {
+        var poll = GetPoll(pollId);
+        if (poll.Status != PollStatus.Open)
+        {
+            throw new PollClosedException();
+        }
+
+        if (!_library.CanAccess(user, itemId))
+        {
+            throw new AccessDeniedException();
+        }
+
+        var movies = _library.GetCollectionMovies(user, itemId);
+        if (movies.Count == 0)
+        {
+            throw new ValidationException("This collection contains no movies you can access.");
+        }
+
+        var existing = _repo.ListSuggestions(pollId).Select(s => s.ItemId).ToHashSet();
+        var max = _config.Current.MaxSuggestionsPerUser;
+        var used = max > 0 ? _repo.CountSuggestionsByUser(pollId, user.Id) : 0;
+
+        var added = new List<Data.SuggestionRow>();
+        var skippedExisting = 0;
+        foreach (var movie in movies)
+        {
+            if (existing.Contains(movie.Id))
+            {
+                skippedExisting++;
+                continue;
+            }
+
+            if (max > 0 && used >= max)
+            {
+                break;
+            }
+
+            var row = new Data.SuggestionRow
+            {
+                Id = Guid.NewGuid(),
+                PollId = pollId,
+                ItemId = movie.Id,
+                ItemType = "Movie",
+                ItemName = movie.Name ?? "Unknown",
+                ItemYear = movie.ProductionYear,
+                SuggestedBy = user.Id
+            };
+            _repo.AddSuggestion(row);
+            added.Add(row);
+            existing.Add(movie.Id);
+            used++;
+        }
+
+        if (added.Count == 0)
+        {
+            if (max > 0 && used >= max && movies.Any(m => !existing.Contains(m.Id)))
+            {
+                throw new SuggestionLimitReachedException(max);
+            }
+
+            throw new DuplicateSuggestionException();
+        }
+
+        _logger.LogInformation(
+            "Collection '{Collection}' suggested into poll {Poll} by {User}: {Added} movies added, {Existing} already present, {OverLimit} over limit",
+            collectionName ?? itemId.ToString(), pollId, user.Username, added.Count, skippedExisting,
+            movies.Count - skippedExisting - added.Count);
+        return (added, skippedExisting, movies.Count - skippedExisting - added.Count);
+    }
+
     public Data.SuggestionRow AddSuggestion(User user, Guid pollId, Guid itemId)
     {
         var poll = GetPoll(pollId);
@@ -168,6 +268,20 @@ public sealed class PollService
         return suggestion;
     }
 
+    /// <summary>Collections the user can see, optionally filtered by name, with accessible-movie counts.</summary>
+    public IReadOnlyList<Api.CollectionInfoDto> ListCollections(User user, string? searchTerm)
+    {
+        var items = _library.ListCollections(user)
+            .Where(b => string.IsNullOrWhiteSpace(searchTerm)
+                || (b.Name ?? string.Empty).Contains(searchTerm.Trim(), StringComparison.OrdinalIgnoreCase))
+            .Select(b => new Api.CollectionInfoDto(
+                b.Id.ToString(),
+                b.Name ?? "Unknown",
+                b.ProductionYear,
+                _library.GetCollectionMovies(user, b.Id).Count))
+            .ToList();
+        return items;
+    }
     public void RemoveSuggestion(User user, Guid pollId, Guid suggestionId)
     {
         var poll = GetPoll(pollId);

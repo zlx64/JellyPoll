@@ -121,8 +121,21 @@ public sealed class PollsController : JellyPollControllerBase
 
         try
         {
-            var suggestion = _polls.AddSuggestion(user, id, itemId);
-            return StatusCode(201, new { Suggestion = _polls.ToSuggestionDto(suggestion) });
+            var outcome = _polls.Suggest(user, id, itemId);
+            if (outcome.Single is not null)
+            {
+                return StatusCode(201, new { Suggestion = _polls.ToSuggestionDto(outcome.Single) });
+            }
+
+            var dtos = outcome.CollectionAdded.Select(_polls.ToSuggestionDto).ToList();
+            return StatusCode(201, new
+            {
+                Suggestions = dtos,
+                SavedCount = dtos.Count,
+                outcome.CollectionSkippedExisting,
+                outcome.CollectionSkippedOverLimit,
+                outcome.CollectionName
+            });
         }
         catch (PollNotFoundException) { return NotFoundError(); }
         catch (PollClosedException) { return Error(409, "poll_closed", "Poll is closed."); }
@@ -132,6 +145,24 @@ public sealed class PollsController : JellyPollControllerBase
         catch (SuggestionLimitReachedException ex) { return Error(409, "suggestion_limit_reached", ex.Message); }
         catch (DuplicateSuggestionException) { return Error(409, "duplicate_suggestion", "Already suggested."); }
         catch (ValidationException ex) { return Error(400, "validation", ex.Message); }
+    }
+
+    // ---------- 4.4a browse collections ----------
+
+    /// <summary>
+    /// Collections (BoxSets) the user can see — Jellyfin 12's /Items searchTerm and
+    /// /Search/Hints both exclude BoxSets, so the picker browses them through us.
+    /// </summary>
+    [HttpGet("Collections")]
+    public async Task<ActionResult<object>> ListCollections([FromQuery] string? searchTerm)
+    {
+        var user = await ResolveUserAsync().ConfigureAwait(false);
+        if (user is null)
+        {
+            return UnauthorizedError();
+        }
+
+        return Ok(new { Items = _polls.ListCollections(user, searchTerm) });
     }
 
     // ---------- 4.5 remove suggestion ----------

@@ -14,4 +14,13 @@ public interface ILibraryAccessValidator
 
     /// <summary>Suggestion type name for a resolved item, or null when type unsupported.</summary>
     string? GetTypeName(BaseItem item);
+
+    /// <summary>
+    /// Movie children of a collection that the user can access (ordered by sort name).
+    /// Empty for non-collection ids.
+    /// </summary>
+    IReadOnlyList<BaseItem> GetCollectionMovies(User user, Guid collectionId);
+
+    /// <summary>Collections (BoxSets) visible to the user, ordered by sort name.</summary>
+    IReadOnlyList<BaseItem> ListCollections(User user);
 }

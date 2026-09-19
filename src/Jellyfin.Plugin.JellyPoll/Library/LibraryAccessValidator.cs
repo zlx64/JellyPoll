@@ -45,12 +45,48 @@ public sealed class LibraryAccessValidator : ILibraryAccessValidator
         return _libraryManager.GetItemList(query).Count > 0;
     }
 
+    /// <summary>Collections (BoxSets) visible to the user, ordered by sort name.
+    /// Empirically on JF 12.1 (verified live): CollapseBoxSetItems=false EXPANDS boxsets
+    /// (members surface, the BoxSet items disappear) — the null-default in the HTTP path
+    /// resolves to the mode that shows BoxSets. Set it explicitly.</summary>
+    public IReadOnlyList<BaseItem> ListCollections(User user)
+    {
+        var query = new InternalItemsQuery(user)
+        {
+            Recursive = true,
+            CollapseBoxSetItems = true
+        };
+        var root = _libraryManager.GetUserRootFolder();
+        return root.GetItems(query)
+            .Items
+            .OfType<BoxSet>()
+            .OrderBy(b => b.SortName ?? b.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
     /// <summary>Suggestion type name for a resolved item, or null when type unsupported.</summary>
     public string? GetTypeName(BaseItem item) => item switch
     {
         Movie => "Movie",
         Episode => "Episode",
         Series => "Series",
+        BoxSet => "Collection",
         _ => null
     };
+
+    /// <summary>Movie children of a collection the user can access, ordered by sort name.</summary>
+    public IReadOnlyList<BaseItem> GetCollectionMovies(User user, Guid collectionId)
+    {
+        if (collectionId == Guid.Empty || ResolveItem(collectionId) is not BoxSet box)
+        {
+            return Array.Empty<BaseItem>();
+        }
+
+        // BoxSet members are linked items (not folder children); access-filter each.
+        return box.GetLinkedChildren()
+            .OfType<Movie>()
+            .Where(m => CanAccess(user, m.Id))
+            .OrderBy(m => m.SortName ?? m.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
 }

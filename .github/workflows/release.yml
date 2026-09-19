@@ -1,3 +1,10 @@
+# Cuts a release when a version tag (vX.Y.Z) is pushed:
+# builds the web SPA + plugin, runs the unit tests, packages the zip,
+# creates the GitHub release, then commits the updated manifest.json back to main.
+#
+# The repo's manifest.json is the plugin catalog: users add
+# https://raw.githubusercontent.com/zlx64/JellyPoll/main/manifest.json
+# to their Jellyfin dashboard (Plugins -> Repositories).
 name: Release
 
 on:
@@ -12,6 +19,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      # vX.Y.Z -> 4-part plugin version (v1.0.0 -> 1.0.0.0); pads short tags.
+      - name: Compute version from tag
+        id: ver
+        run: |
+          V="${GITHUB_REF_NAME#v}"
+          IFS='.' read -r -a p <<< "$V"
+          if [ "${#p[@]}" -gt 4 ]; then
+            echo "::error::Tag must be vX.Y.Z (got $GITHUB_REF_NAME)"
+            exit 1
+          fi
+          while [ "${#p[@]}" -lt 4 ]; do p+=("0"); done
+          version="$(IFS='.'; echo "${p[*]}")"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Resolved plugin version: $version"
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -30,19 +52,14 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Compute version from tag
-        id: ver
-        run: |
-          V="${GITHUB_REF_NAME#v}"
-          DOTS=$(echo "$V" | tr -cd '.' | wc -c)
-          if [ "$DOTS" -lt 3 ]; then V="$V.0"; fi
-          echo "version=$V" >> "$GITHUB_OUTPUT"
-
       - name: Build web app (must run before dotnet — SPA is embedded)
         working-directory: web
         run: |
           npm ci
           npm run build
+
+      - name: Test (gate the release)
+        run: dotnet test JellyPoll.slnx -c Release
 
       - name: Publish plugin
         run: dotnet publish src/Jellyfin.Plugin.JellyPoll -c Release -o publish -p:Version=${{ steps.ver.outputs.version }}
@@ -63,6 +80,7 @@ jobs:
             --title "JellyPoll ${{ github.ref_name }}" \
             --generate-notes
 
+      # Tag checkout is a detached HEAD; push the manifest commit explicitly to main.
       - name: Commit updated manifest
         run: |
           git config user.name "github-actions[bot]"
@@ -72,5 +90,5 @@ jobs:
             echo "Manifest unchanged"
           else
             git commit -m "chore: update plugin manifest for ${{ github.ref_name }}"
-            git push origin HEAD:${GITHUB_REF_NAME#refs/heads/} 2>/dev/null || git push origin HEAD:main
+            git push origin HEAD:main
           fi

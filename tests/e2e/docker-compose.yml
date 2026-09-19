@@ -1,0 +1,22 @@
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:12.1
+    container_name: jellypoll-e2e
+    ports:
+      - "8096:8096"
+    volumes:
+      - jellyfin-e2e-data:/jellyfin/data
+      - F:\Movies:/media/movies:ro
+    environment:
+      - PUID=0
+      - PGID=0
+      - TZ=Etc/UTC
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8096/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+    restart: unless-stopped
+
+volumes:
+  jellyfin-e2e-data:

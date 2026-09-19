@@ -5,12 +5,12 @@ using MediaBrowser.Common.Configuration;
 namespace Jellyfin.Plugin.JellyPoll.Menu;
 
 /// <summary>
-/// Adds/removes the "Movie Polls" entry in the web client's config.json menuLinks
+/// Adds/removes the "Jelly Polls" entry in the web client's config.json menuLinks
 /// (doc 06 §4). Creates a one-time backup before first write.
 /// </summary>
 public sealed class MenuLinkInstaller
 {
-    public const string MenuName = "Movie Polls";
+    public const string MenuName = "Jelly Polls";
     public const string MenuUrl = "/JellyPoll/Web/";
     public const string MenuIcon = "how_to_vote";
 
@@ -44,10 +44,17 @@ public sealed class MenuLinkInstaller
         {
             if (install)
             {
-                return true; // already installed
-            }
+                if (menuLinks[existingIndex]?["name"]?.GetValue<string>() == MenuName)
+                {
+                    return true; // already installed
+                }
 
-            menuLinks.RemoveAt(existingIndex);
+                menuLinks[existingIndex]!["name"] = MenuName; // rename entry from the previous display name
+            }
+            else
+            {
+                menuLinks.RemoveAt(existingIndex);
+            }
         }
         else if (install)
         {

@@ -3,58 +3,32 @@
 <head>
   <meta charset="utf-8">
   <title>JellyPoll</title>
-  <style>
-    #jellypollLaunch { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1rem; }
-    #jellypollFrame {
-      display: block;
-      width: 100%;
-      height: max(75vh, 640px);
-      min-height: 640px;
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 8px;
-      background: transparent;
-    }
-    #jellypollSettings summary { cursor: pointer; color: inherit; margin: 0.5rem 0 1rem; }
-    .jellypollIntro { color: inherit; opacity: 0.75; }
-  </style>
 </head>
 <body>
   <div id="jellypollConfigPage" data-role="page" class="page type-interior pluginConfigurationPage">
     <div data-role="content">
       <div class="content-primary">
-        <h2>Movie Polls</h2>
-        <div id="jellypollLaunch">
-          <p class="jellypollIntro">Group polls to choose what to watch together: suggest titles from the library, rank them, and crown the top 3.</p>
-          <iframe id="jellypollFrame"
-                  title="Movie Polls"
-                  src="/JellyPoll/Web/"
-                  style="display:block;width:100%;height:85vh;min-height:640px;border:1px solid rgba(128,128,128,0.35);border-radius:8px;background:transparent;">
-          </iframe>
-        </div>
-
-        <details>
-          <summary>Plugin settings</summary>
-          <form id="jellypollConfigForm">
-            <div class="checkboxContainer">
-              <label><input is="emby-checkbox" type="checkbox" id="chkEpisodes" /><span>Allow TV episodes in new polls by default</span></label>
-            </div>
-            <div class="checkboxContainer">
-              <label><input is="emby-checkbox" type="checkbox" id="chkSeries" /><span>Allow TV series in new polls by default</span></label>
-            </div>
-            <div class="inputContainer">
-              <label class="inputLabel" for="numMaxSuggestions">Max suggestions per user per poll (0 = unlimited)</label>
-              <input is="emby-input" type="number" min="0" step="1" id="numMaxSuggestions" />
-            </div>
-            <div class="checkboxContainer">
-              <label><input is="emby-checkbox" type="checkbox" id="chkLiveStandings" /><span>Show live standings while polls are open</span></label>
-            </div>
-            <div>
-              <button is="emby-button" type="submit" class="raised button-submit emby-button"><span>Save</span></button>
-              <button is="emby-button" type="button" id="btnInstallMenuLink" class="raised emby-button"><span>Add "Movie Polls" link to main menu (all users)</span></button>
-              <p id="menuLinkResult" class="fieldDescription"></p>
-            </div>
-          </form>
-        </details>
+        <h2>Jelly Polls</h2>
+        <form id="jellypollConfigForm">
+          <div class="checkboxContainer">
+            <label><input is="emby-checkbox" type="checkbox" id="chkEpisodes" /><span>Allow TV episodes in new polls by default</span></label>
+          </div>
+          <div class="checkboxContainer">
+            <label><input is="emby-checkbox" type="checkbox" id="chkSeries" /><span>Allow TV series in new polls by default</span></label>
+          </div>
+          <div class="inputContainer">
+            <label class="inputLabel" for="numMaxSuggestions">Max suggestions per user per poll (0 = unlimited)</label>
+            <input is="emby-input" type="number" min="0" step="1" id="numMaxSuggestions" />
+          </div>
+          <div class="checkboxContainer">
+            <label><input is="emby-checkbox" type="checkbox" id="chkLiveStandings" /><span>Show live standings while polls are open</span></label>
+          </div>
+          <div>
+            <button is="emby-button" type="submit" class="raised button-submit emby-button"><span>Save</span></button>
+            <button is="emby-button" type="button" id="btnInstallMenuLink" class="raised emby-button"><span>Add "Jelly Polls" link to main menu (all users)</span></button>
+            <p id="menuLinkResult" class="fieldDescription"></p>
+          </div>
+        </form>
       </div>
     </div>
     <script type="text/javascript">
@@ -93,9 +67,9 @@
           }).then(function (r) { return r.json(); }).then(function (res) {
             var el = document.querySelector('#menuLinkResult');
             if (res.Installed) {
-              el.textContent = 'Menu link installed. Reload the web client (F5) to see the "Movie Polls" button.';
+              el.textContent = 'Menu link installed. Reload the web client (F5) to see the "Jelly Polls" button.';
             } else if (res.Manual) {
-              el.textContent = 'The web client folder is read-only (typical in Docker). Add the menuLinks entry to config.json manually — see the plugin README. Everyone can still use the polls via this page or /JellyPoll/Web/.';
+              el.textContent = 'The web client folder is read-only (typical in Docker). Add the menuLinks entry to config.json manually — see the plugin README. Everyone can still use the polls via the "Jelly Polls" menu entry or /JellyPoll/Web/.';
             } else {
               el.textContent = 'Menu link removed.';
             }

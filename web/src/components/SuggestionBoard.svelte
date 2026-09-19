@@ -1,8 +1,9 @@
 <script lang="ts">
   import Poster from './Poster.svelte';
   import { auth } from '../lib/auth.svelte';
-  import { jellypoll } from '../lib/api';
+  import { jellypoll, detailUrl } from '../lib/api';
   import type { PollDetail, Suggestion } from '../lib/types';
+  import Icon from './Icon.svelte';
 
   let {
     detail,
@@ -36,37 +37,76 @@
   }
 </script>
 
-<div>
-  <h3>Suggested ({detail.Suggestions.length})</h3>
-  <div class="board">
-    {#each detail.Suggestions as s (s.Id)}
-      <div class="card item" class:missing={s.ItemMissing}>
-        <Poster itemId={s.ItemId} name={s.Name} size={64} />
-        <div class="info">
-          <div class="name">{s.Name} <span class="dim">{s.Year ?? ''}</span></div>
-          <div class="dim">by {s.SuggestedByName}{s.ItemMissing ? ' · no longer in library' : ''}</div>
-        </div>
-        {#if detail.Poll.Status === 'open' && !inMyOrder(s) && !s.ItemMissing}
-          <button class="primary" title="Add to my watch order" onclick={() => onAddToOrder(s.Id)}>＋ order</button>
-        {:else if inMyOrder(s)}
-          <span class="dim ordered" title="In your watch order">✓ in my order</span>
-        {/if}
-        {#if canRemove(s)}
-          <button class="danger" title="Remove from poll" onclick={() => remove(s)}>✕</button>
-        {/if}
-      </div>
-    {:else}
-      <p class="dim">Nothing suggested yet — be the first!</p>
-    {/each}
-  </div>
+<div class="board">
+  <h3 class="sechead"><Icon name="how_to_vote" size={18} /><span>Suggested <span class="count">({detail.Suggestions.length})</span></span></h3>
+
+  {#if detail.Suggestions.length === 0}
+    <p class="empty dim"><Icon name="movie" size={16} /> Nothing suggested yet — be the first!</p>
+  {:else}
+    <ul class="list">
+      {#each detail.Suggestions as s (s.Id)}
+        <li class="row" class:missing={s.ItemMissing}>
+          <Poster itemId={s.ItemId} name={s.Name} size={40} missing={s.ItemMissing} />
+          <div class="info">
+            <div class="nameline">
+              {#if s.ItemMissing}
+                <span class="name dim">{s.Name}</span>
+              {:else}
+                <a class="name titlelink" href={detailUrl(s.ItemId)} target="_blank" rel="noreferrer">{s.Name}</a>
+              {/if}
+              {#if s.Year}<span class="year dim">{s.Year}</span>{/if}
+            </div>
+            <div class="by dim">
+              <Icon name="group" size={11} /> by {s.SuggestedByName}
+              {#if s.ItemMissing}<Icon name="visibility_off" size={12} /> no longer in library{/if}
+            </div>
+          </div>
+          {#if detail.Poll.Status === 'open' && !inMyOrder(s) && !s.ItemMissing}
+            <button class="addbtn" title="Add to my watch order" onclick={() => onAddToOrder(s.Id)}>
+              <Icon name="add" size={14} /> order
+            </button>
+          {:else if inMyOrder(s)}
+            <span class="chip success" title="In your watch order"><Icon name="check" size={12} /> in my order</span>
+          {/if}
+          {#if canRemove(s)}
+            <button class="iconbtn danger" title="Remove from poll" onclick={() => remove(s)}>
+              <Icon name="close" size={16} />
+            </button>
+          {/if}
+        </li>
+      {/each}
+    </ul>
+  {/if}
 </div>
 
 <style>
-  .board { display: flex; flex-direction: column; gap: 0.5rem; }
-  .item { display: flex; align-items: center; gap: 0.7rem; padding: 0.5rem; }
-  .item.missing { opacity: 0.45; }
-  .info { flex: 1; min-width: 0; }
-  .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .ordered { color: var(--jp-success, #5cbd5c); font-size: 0.8rem; white-space: nowrap; }
-  .board button.primary { padding: 0.35rem 0.6rem; font-size: 0.85rem; white-space: nowrap; }
+  .count { color: var(--jp-text-dim); font-weight: 500; }
+  .empty { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; margin: 0.4rem 0 0; }
+  .list { list-style: none; margin: 0.4rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+  .row {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.3rem; border-radius: var(--jp-radius-sm);
+    background: var(--jp-surface-2); border: 1px solid transparent;
+    transition: border-color 0.12s ease;
+  }
+  .row:hover { border-color: var(--jp-border); }
+  .row.missing { opacity: 0.6; }
+  .info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
+  .nameline { display: flex; align-items: baseline; gap: 0.35rem; min-width: 0; }
+  .name {
+    min-width: 0;
+    font-size: 0.88rem; font-weight: 500;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .year { font-size: 0.72rem; flex-shrink: 0; }
+  .titlelink { color: inherit; text-decoration: none; }
+  .titlelink:hover { color: var(--jp-accent); text-decoration: underline; }
+  .by { font-size: 0.72rem; display: flex; align-items: center; gap: 0.25rem; }
+  .addbtn {
+    background: transparent; border: 1px solid var(--jp-accent);
+    color: var(--jp-accent); font-size: 0.72rem; font-weight: 600;
+    padding: 0.22rem 0.5rem; border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 0.25rem; white-space: nowrap;
+  }
+  .addbtn:hover { background: rgba(77, 163, 255, 0.12); }
 </style>

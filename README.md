@@ -10,7 +10,7 @@ A [Jellyfin](https://jellyfin.org) **12.x** plugin for group polls: suggest titl
 - **Concurrent suggestions** of movies, TV episodes, and TV series (per-poll toggles) directly from the Jellyfin library — Jellyfin's own permissions and parental controls apply.
 - **Ranked ballots**: each user drags the suggestions into their personal watch order (partial ballots allowed).
 - **Live standings** computed with [Borda count](https://en.wikipedia.org/wiki/Borda_count) and updated for everyone within seconds.
-- **"Movie Polls" button in the Jellyfin web UI menu** (added to `config.json` `menuLinks` automatically on request, with a one-click fallback from the plugin's dashboard page).
+- **"Jelly Polls" button in the Jellyfin web UI menu** (added to `config.json` `menuLinks` automatically on request, with a one-click fallback from the plugin's dashboard page).
 - Self-contained, theme-matched web UI served by the plugin itself — no web client modification beyond the optional menu link.
 
 ## Requirements
@@ -27,8 +27,8 @@ A [Jellyfin](https://jellyfin.org) **12.x** plugin for group polls: suggest titl
    ```
 
 2. Open the **Catalogue**, find **JellyPoll**, install it, and **restart Jellyfin**.
-3. Optional: open **Dashboard → Plugins → JellyPoll**, set your defaults, and click **"Add Movie Polls button to menu"**.
-4. Hard-refresh the web client (Ctrl+Shift+R). You'll find **Movie Polls** in the navigation menu.
+3. Optional: open **Dashboard → Plugins → JellyPoll**, set your defaults, and click **"Add Jelly Polls button to menu"**.
+4. Hard-refresh the web client (Ctrl+Shift+R). You'll find **Jelly Polls** in the navigation menu.
 
 ### Manual menu button (fallback)
 
@@ -36,7 +36,7 @@ If your `config.json` is read-only (e.g., a Docker bind mount), add this to the 
 
 ```json
 "menuLinks": [
-  { "name": "Movie Polls", "url": "/JellyPoll/Web/", "icon": "how_to_vote" }
+  { "name": "Jelly Polls", "url": "/JellyPoll/Web/", "icon": "how_to_vote" }
 ]
 ```
 
@@ -94,7 +94,7 @@ cd web && npm run dev   # Vite dev server proxying /JellyPoll, /Items, /Users, /
 
 ## FAQ
 
-**The "Movie Polls" button doesn't appear.**
+**The "Jelly Polls" button doesn't appear.**
 The menu link is written to the web client's `config.json`; depending on layout it appears in the top bar (Modern layout) or the drawer (Legacy). Hard-refresh the browser. If your install serves `config.json` from a read-only mount, add the entry manually (see above).
 
 **Can I open the polls without the menu button?**

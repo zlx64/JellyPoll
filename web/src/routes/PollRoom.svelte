@@ -6,6 +6,7 @@
   import SuggestionBoard from '../components/SuggestionBoard.svelte';
   import MyRanking from '../components/MyRanking.svelte';
   import Standings from '../components/Standings.svelte';
+  import Icon from '../components/Icon.svelte';
 
   let { pollId }: { pollId: string } = $props();
 
@@ -148,33 +149,48 @@
   const detailLink = $derived(
     gold ? `${location.origin}/web/index.html#!/details?id=${gold.ItemId}` : ''
   );
+  const homeUrl = `${location.origin}/web/index.html#!/home`;
 </script>
 
 {#if detail}
   <div class="page">
     <div class="header">
-      <a class="back" href="#/polls">← Polls</a>
-      <h1>{detail.Poll.Title} <span class="badge" class:closed={detail.Poll.Status === 'closed'}>{detail.Poll.Status}</span></h1>
+      <a class="home" href={homeUrl} title="Back to the Jellyfin home page">
+        <Icon name="home" size={18} /> <span>Jellyfin home</span>
+      </a>
+      <a class="home" href="#/polls" title="Back to all polls">
+        <Icon name="format_list_numbered" size={18} /> <span>All polls</span>
+      </a>
+      <h1>
+        <Icon name="how_to_vote" size={22} class="titleicon" />
+        <span class="titletext">{detail.Poll.Title}</span>
+        {#if detail.Poll.Status === 'open'}
+          <span class="chip open"><Icon name="how_to_vote" size={12} /> open</span>
+        {:else}
+          <span class="chip"><Icon name="lock" size={12} /> closed</span>
+        {/if}
+      </h1>
       <div class="manage">
         {#if detail.IsCreator || detail.IsAdmin}
           {#if detail.Poll.Status === 'open'}
-            <button class="primary" onclick={closePoll}>Close poll</button>
+            <button class="primary" onclick={closePoll}><Icon name="lock" size={16} /> Close poll</button>
           {:else}
-            <button onclick={reopenPoll}>Reopen</button>
+            <button onclick={reopenPoll}><Icon name="refresh" size={16} /> Reopen</button>
           {/if}
         {/if}
       </div>
     </div>
-    <p class="dim">by {detail.Poll.CreatedByName}</p>
 
-    {#if error}<div class="error-box">{error}</div>{/if}
+    {#if error}<div class="error-box"><Icon name="error" size={16} /> {error}</div>{/if}
 
     {#if detail.Poll.Status === 'closed'}
-      <h2>Final results</h2>
+      <h2 class="finalhead"><Icon name="trophy" size={22} class="goldicon" /> Final results</h2>
       <Standings standings={detail.Standings} closed={true} />
       {#if gold}
         <a class="card watchnext" href={detailLink} target="_blank" rel="noreferrer">
-          ▶ Watch "{gold.Name}" now
+          <Icon name="play_arrow" size={20} class="playicon" />
+          <span>Watch "{gold.Name}" now</span>
+          <Icon name="open_in_new" size={15} class="exticon" />
         </a>
       {/if}
     {:else}
@@ -184,16 +200,22 @@
           <SuggestionBoard {detail} {myBallot} onChanged={onChanged} onAddToOrder={addToOrder} />
         </div>
         <div class="col">
-          <MyRanking {detail} {myBallot} onReorder={reorder} onRemove={removeFromBallot} />
-          <p class="dim savehint">{saved ? '✓ ranking saved' : 'ranking saves automatically'}</p>
-          <h3>Standings <span class="live">live ●</span></h3>
-          <Standings standings={detail.Standings} />
+          <MyRanking {detail} {myBallot} {saved} onReorder={reorder} onRemove={removeFromBallot} />
+        </div>
+        <div class="col">
+          <div class="card">
+            <h3 class="sechead"><Icon name="trophy" size={18} /><span>Standings <span class="live">live</span></span></h3>
+            <Standings standings={detail.Standings} />
+          </div>
         </div>
       </div>
     {/if}
 
     {#if toast}
-      <div class="toast" class:err={toastIsError}>{toast}</div>
+      <div class="toast" class:err={toastIsError}>
+        <Icon name={toastIsError ? 'error' : 'check_circle'} size={17} />
+        <span>{toast}</span>
+      </div>
     {/if}
   </div>
 {:else}
@@ -202,28 +224,59 @@
 {/if}
 
 <style>
-  .page { max-width: 1000px; margin: 0 auto; padding: 1rem; }
+  .page { max-width: 1280px; margin: 0 auto; padding: 1rem; }
   .header { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; }
-  .header h1 { margin: 0; font-size: 1.3rem; flex: 1; }
-  .back { color: var(--jp-accent); text-decoration: none; }
-  .badge {
-    font-size: 0.7rem; text-transform: uppercase; padding: 0.15rem 0.5rem;
-    border-radius: 999px; background: var(--jp-accent); color: #fff; vertical-align: middle;
+  .header h1 {
+    margin: 0; font-size: 1.25rem; flex: 1; min-width: 0;
+    display: flex; align-items: center; gap: 0.5rem;
   }
-  .badge.closed { background: var(--jp-text-dim); }
-  .columns { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
-  @media (max-width: 900px) { .columns { grid-template-columns: 1fr; } }
+  :global(.titleicon) { color: var(--jp-accent); }
+  .titletext { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .home {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    color: var(--jp-text-dim); text-decoration: none;
+    font-size: 0.88rem; font-weight: 500; white-space: nowrap;
+  }
+  .home:hover { color: var(--jp-accent); }
+  .finalhead {
+    display: flex; align-items: center; gap: 0.5rem;
+    font-size: 1.2rem; margin: 1rem 0 0;
+  }
+  :global(.goldicon) { color: var(--jp-gold); }
+  .columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; align-items: start; margin-top: 0.8rem; }
+  @media (max-width: 1100px) { .columns { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 700px) { .columns { grid-template-columns: 1fr; } }
   .col { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
-  .live { color: #4caf50; font-size: 0.75rem; }
-  .savehint { font-size: 0.8rem; margin: -0.6rem 0 0; }
+  .live {
+    font-size: 0.7rem; font-weight: 600;
+    color: var(--jp-success);
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    position: relative; top: -2px;
+  }
+  .live::before {
+    content: ''; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--jp-success);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
   .toast {
     position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%);
-    background: var(--jp-surface-2); padding: 0.6rem 1rem; border-radius: var(--jp-radius);
-    box-shadow: 0 4px 14px rgba(0,0,0,0.4); z-index: 20;
+    display: flex; align-items: center; gap: 0.5rem;
+    background: var(--jp-surface-2); color: var(--jp-text);
+    border: 1px solid var(--jp-border);
+    padding: 0.6rem 1rem; border-radius: var(--jp-radius);
+    box-shadow: var(--jp-shadow); z-index: 20;
   }
-  .toast.err { background: var(--jp-danger); color: #fff; }
+  .toast :global(.icon) { color: var(--jp-success); }
+  .toast.err { background: rgba(211, 47, 47, 0.15); border-color: rgba(211, 47, 47, 0.4); color: var(--jp-danger); }
+  .toast.err :global(.icon) { color: var(--jp-danger); }
   .watchnext {
-    display: inline-block; margin-top: 0.8rem; text-decoration: none; color: inherit;
-    border: 1px solid var(--jp-gold);
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    margin-top: 0.8rem; text-decoration: none; color: inherit;
+    border: 1px solid var(--jp-gold); font-weight: 500;
+    transition: background 0.15s ease, transform 0.15s ease;
   }
+  .watchnext:hover { background: rgba(212, 175, 55, 0.1); transform: translateY(-1px); }
+  :global(.playicon) { color: var(--jp-gold); }
+  :global(.exticon) { color: var(--jp-text-dim); }
 </style>

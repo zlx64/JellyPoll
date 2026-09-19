@@ -135,6 +135,11 @@ export const jellyfin = {
 
 // ---------- poster images (blob fetch — img tags cannot send headers) ----------
 
+/** Absolute URL of the item's page in the Jellyfin web client (new tab). */
+export function detailUrl(itemId: string): string {
+  return `${location.origin}/web/index.html#!/details?id=${itemId}`;
+}
+
 const imageCache = new Map<string, Promise<string | null>>();
 
 export function posterUrl(itemId: string): Promise<string | null> {

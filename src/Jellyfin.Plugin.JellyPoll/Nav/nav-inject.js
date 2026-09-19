@@ -3,7 +3,7 @@
  * Injected into Jellyfin's /web/index.html by NavInjectionMiddleware (server-side
  * transform; the webroot on disk is never touched).
  *
- * Adds a "Movie Polls" entry to the web UI navigation for ALL users:
+ * Adds a "Jelly Polls" entry to the web UI navigation for ALL users:
  *  - Jellyfin 12 (default layout): the avatar menu (#app-user-menu), below Profile.
  *  - Legacy drawer layouts: the sidebar (.navMenuOption), next to Settings.
  * Re-injects idempotently as the SPA re-renders (MutationObserver).
@@ -48,7 +48,7 @@
     function labelSpan(cls) {
         var s = document.createElement('span');
         s.className = cls || 'navMenuOptionText';
-        s.textContent = 'Movie Polls';
+        s.textContent = 'Jelly Polls';
         return s;
     }
 
@@ -92,7 +92,7 @@
                 || item.querySelector('.MuiListItemText-root .MuiTypography-root')
                 || item.querySelector('.MuiListItemText-root');
             if (label) {
-                label.textContent = 'Movie Polls';
+                label.textContent = 'Jelly Polls';
             } else if (!link) {
                 item.textContent = '';
                 item.appendChild(labelSpan(''));

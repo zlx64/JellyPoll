@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { posterUrl } from '../lib/api';
 
-  let { itemId, name, size = 120 }: { itemId: string; name: string; size?: number } = $props();
+  let { itemId, name, size = 120, missing = false }: { itemId: string; name: string; size?: number; missing?: boolean } = $props();
 
   let url = $state<string | null>(null);
 
@@ -11,7 +11,7 @@
   });
 </script>
 
-<div class="poster" style="width: {size}px">
+<div class="poster" class:missing style="width: {size}px">
   {#if url}
     <img src={url} alt={name} loading="lazy" />
   {:else}
@@ -27,7 +27,7 @@
     width: 100%;
     aspect-ratio: 2 / 3;
     object-fit: cover;
-    border-radius: var(--jp-radius);
+    border-radius: var(--jp-radius-sm);
     display: block;
   }
   .fallback {
@@ -36,5 +36,10 @@
     place-items: center;
     font-size: 2rem;
     color: var(--jp-text-dim);
+  }
+  .missing img,
+  .missing .fallback {
+    filter: grayscale(1);
+    opacity: 0.5;
   }
 </style>

@@ -36,7 +36,7 @@ public sealed class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
         new PluginPageInfo
         {
             Name = "jellypoll",
-            DisplayName = "Movie Polls",
+            DisplayName = "Jelly Polls",
             EmbeddedResourcePath = "Jellyfin.Plugin.JellyPoll.Configuration.configPage.html",
             // Officially renders in the web client's navigation (dashboard drawer "Plugins"
             // section) — jellyfin-web fetches pages with enableInMainMenu=true and links to

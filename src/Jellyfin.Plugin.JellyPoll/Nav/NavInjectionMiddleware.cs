@@ -8,7 +8,7 @@ namespace Jellyfin.Plugin.JellyPoll.Nav;
 
 /// <summary>
 /// Injects a small script tag into Jellyfin's served /web/index.html so the
-/// injected client script can add a "Movie Polls" entry to the web UI's
+/// injected client script can add a "Jelly Polls" entry to the web UI's
 /// avatar menu for ALL users. Purely a response transform — the webroot on
 /// disk is never modified (proven pattern from the JellyfinSecurity plugin's
 /// IndexHtmlInjectionMiddleware, verified live on Jellyfin 12.1).
@@ -24,9 +24,6 @@ public sealed class NavInjectionMiddleware
     private static readonly string CacheBust =
         (typeof(Plugin).Assembly.GetName().Version?.ToString() ?? "0")
         + "-" + Guid.NewGuid().ToString("N").Substring(0, 8);
-
-    private static readonly string ScriptTag =
-        "<script src=\"../JellyPoll/nav-inject?v=" + CacheBust + "\"></script>";
 
     private readonly RequestDelegate _next;
     private readonly IConfigurationAccessor _config;
@@ -155,7 +152,7 @@ public sealed class NavInjectionMiddleware
                 }
             }
 
-            var patched = html.Insert(insertAt, InjectionMarker + ScriptTag);
+            var patched = html.Insert(insertAt, InjectionMarker + BuildScriptTag(context));
             var patchedBytes = Encoding.UTF8.GetBytes(patched);
 
             lock (CacheLock)
@@ -186,6 +183,17 @@ public sealed class NavInjectionMiddleware
         response.Headers.Expires = "0";
     }
 
+    /// <summary>
+    /// Absolute script URL rooted at the request's base path (reverse-proxy
+    /// deployments keep the prefix in PathBase). Absolute so the tag resolves
+    /// correctly no matter which document it lands in.
+    /// </summary>
+    private static string BuildScriptTag(HttpContext context)
+    {
+        var basePath = context.Request.PathBase.Value ?? string.Empty;
+        return "<script src=\"" + basePath + "/JellyPoll/nav-inject?v=" + CacheBust + "\"></script>";
+    }
+
     private static bool IsIndexHtmlRequest(HttpContext context)
     {
         if (!HttpMethods.IsGet(context.Request.Method))
@@ -199,12 +207,19 @@ public sealed class NavInjectionMiddleware
             return false;
         }
 
+        // Never touch our own plugin routes (e.g. the SPA at /JellyPoll/Web).
+        if (path.Contains("/JellyPoll/", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
         var normalized = path.Length > 1 ? path.TrimEnd('/') : path;
         return normalized.Equals("/web", StringComparison.OrdinalIgnoreCase)
             || normalized.Equals("/web/index.html", StringComparison.OrdinalIgnoreCase)
             // Server BaseUrl deployments keep the prefix in Request.Path
             // (e.g. /jellyfin/web/index.html) — match the stable web suffix.
-            || normalized.EndsWith("/web", StringComparison.OrdinalIgnoreCase)
-            || normalized.EndsWith("/web/index.html", StringComparison.OrdinalIgnoreCase);
+            // Case-sensitive: our SPA lives at /JellyPoll/Web and must not match.
+            || normalized.EndsWith("/web", StringComparison.Ordinal)
+            || normalized.EndsWith("/web/index.html", StringComparison.Ordinal);
     }
 }

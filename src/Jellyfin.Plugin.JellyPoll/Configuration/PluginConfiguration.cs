@@ -18,7 +18,7 @@ public class PluginConfiguration : BasePluginConfiguration
     public bool ShowLiveStandings { get; set; } = true;
 
     /// <summary>
-    /// When true (default), a "Movie Polls" entry is injected into the web UI's
+    /// When true (default), a "Jelly Polls" entry is injected into the web UI's
     /// avatar menu / sidebar for ALL users via an index.html response transform
     /// (no webroot modification).
     /// </summary>

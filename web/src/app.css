@@ -1,24 +1,42 @@
 :root {
   --jp-bg: #101010;
-  --jp-surface: #202020;
-  --jp-surface-2: #2a2a2a;
+  --jp-surface: #1c1c1e;
+  --jp-surface-2: #2a2a2c;
+  --jp-surface-3: #35353a;
   --jp-text: #eee;
-  --jp-text-dim: #aaa;
-  --jp-accent: #00a4dc;
-  --jp-gold: #d4af37;
-  --jp-silver: #b8b8b8;
-  --jp-bronze: #cd7f32;
-  --jp-danger: #d32f2f;
-  --jp-radius: 8px;
+  --jp-text-dim: #a0a0a8;
+  --jp-accent: #4da3ff;
+  --jp-accent-contrast: #fff;
+  --jp-gold: #ffd54f;
+  --jp-silver: #c0c4cc;
+  --jp-bronze: #d99a5b;
+  --jp-success: #58c470;
+  --jp-warning: #f2b01e;
+  --jp-danger: #ff5c5c;
+  --jp-border: rgba(255, 255, 255, 0.1);
+  --jp-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 14px rgba(0, 0, 0, 0.25);
+  --jp-radius: 10px;
+  --jp-radius-sm: 6px;
 }
 
 @media (prefers-color-scheme: light) {
   :root {
-    --jp-bg: #f2f2f2;
+    --jp-bg: #f4f4f6;
     --jp-surface: #ffffff;
-    --jp-surface-2: #e9e9e9;
-    --jp-text: #222;
-    --jp-text-dim: #666;
+    --jp-surface-2: #ececf1;
+    --jp-surface-3: #e0e0e8;
+    --jp-text: #1c1c22;
+    --jp-text-dim: #62626e;
+    --jp-accent: #0b7fd4;
+    --jp-accent-contrast: #fff;
+    --jp-gold: #b8860b;
+    --jp-silver: #5c6068;
+    --jp-bronze: #9c5a24;
+    --jp-success: #2e9e4f;
+    --jp-warning: #b07d0a;
+    --jp-danger: #d32f2f;
+    --jp-border: rgba(0, 0, 0, 0.1);
+    --jp-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 4px 14px rgba(0, 0, 0, 0.06);
   }
 }
 
@@ -29,37 +47,101 @@ body {
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   background: var(--jp-bg);
   color: var(--jp-text);
+  -webkit-font-smoothing: antialiased;
 }
 
 button {
   font: inherit;
+  font-weight: 500;
   background: var(--jp-surface-2);
   color: var(--jp-text);
-  border: 1px solid transparent;
+  border: 1px solid var(--jp-border);
   border-radius: var(--jp-radius);
   padding: 0.45rem 0.9rem;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: background 0.15s ease, filter 0.15s ease, border-color 0.15s ease;
 }
-button:hover { filter: brightness(1.15); }
-button.primary { background: var(--jp-accent); color: #fff; }
-button.danger { background: transparent; border-color: var(--jp-danger); color: var(--jp-danger); }
+button:hover { background: var(--jp-surface-3); }
+button.primary {
+  background: var(--jp-accent);
+  border-color: transparent;
+  color: var(--jp-accent-contrast);
+}
+button.primary:hover { filter: brightness(1.1); background: var(--jp-accent); }
+button.danger {
+  background: transparent;
+  border-color: transparent;
+  color: var(--jp-danger);
+}
+button.danger:hover { background: rgba(211, 47, 47, 0.12); }
 button:disabled { opacity: 0.5; cursor: default; }
+
+/* Small square button for icon-only actions in list rows. */
+button.iconbtn {
+  padding: 0.3rem;
+  border: none;
+  background: transparent;
+  border-radius: var(--jp-radius-sm);
+  color: var(--jp-text-dim);
+}
+button.iconbtn:hover { background: var(--jp-surface-3); color: var(--jp-text); }
+button.iconbtn.danger:hover { background: rgba(211, 47, 47, 0.15); color: var(--jp-danger); }
 
 input[type="text"], input[type="password"], input[type="search"] {
   font: inherit;
   background: var(--jp-surface-2);
   color: var(--jp-text);
-  border: 1px solid transparent;
+  border: 1px solid var(--jp-border);
   border-radius: var(--jp-radius);
   padding: 0.5rem 0.7rem;
+  width: 100%;
 }
-input:focus { outline: 2px solid var(--jp-accent); }
+input::placeholder { color: var(--jp-text-dim); }
+input:focus { outline: 2px solid var(--jp-accent); outline-offset: -1px; }
 
 .card {
   background: var(--jp-surface);
+  border: 1px solid var(--jp-border);
   border-radius: var(--jp-radius);
   padding: 1rem;
 }
 
 .dim { color: var(--jp-text-dim); }
-.error-box { background: rgba(211, 47, 47, 0.15); color: #ff8a80; border-radius: var(--jp-radius); padding: 0.6rem 0.9rem; }
+.error-box {
+  background: rgba(211, 47, 47, 0.12);
+  border: 1px solid rgba(211, 47, 47, 0.35);
+  color: var(--jp-danger);
+  border-radius: var(--jp-radius);
+  padding: 0.6rem 0.9rem;
+}
+
+/* Pill-shaped status chip. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  background: var(--jp-surface-3);
+  color: var(--jp-text-dim);
+  white-space: nowrap;
+}
+.chip.open { background: rgba(77, 163, 255, 0.15); color: var(--jp-accent); }
+.chip.success { background: rgba(88, 196, 112, 0.15); color: var(--jp-success); }
+
+/* Section heading with a leading icon. */
+.sechead {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.sechead .icon { color: var(--jp-accent); }

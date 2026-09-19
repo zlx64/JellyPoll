@@ -8,6 +8,141 @@
     "category": "General",
     "versions": [
       {
+        "version": "1.0.17.22",
+        "changelog": "See release notes at https://github.com/zlx64/JellyPoll/releases/tag/v1.0.17.22",
+        "targetAbi": "12.1.0.0",
+        "framework": "net10.0",
+        "sourceUrl": "https://github.com/zlx64/JellyPoll/releases/download/v1.0.17.22/jellypoll_1.0.17.22.zip",
+        "checksum": "ED6FBEBD91C9AF68F855F98F9F6BA86E",
+        "timestamp": "2026-09-19T22:44:00Z"
+      },
+      {
+        "version": "1.0.17.21",
+        "changelog": "See release notes at https://github.com/zlx64/JellyPoll/releases/tag/v1.0.17.21",
+        "targetAbi": "12.1.0.0",
+        "framework": "net10.0",
+        "sourceUrl": "https://github.com/zlx64/JellyPoll/releases/download/v1.0.17.21/jellypoll_1.0.17.21.zip",
+        "checksum": "ABE6D4AA0C6563840A0A714FF5AB6F73",
+        "timestamp": "2026-09-19T22:23:31Z"
+      },
+      {
+        "version": "1.0.17.20",
+        "changelog": "See release notes at https://github.com/zlx64/JellyPoll/releases/tag/v1.0.17.20",
+        "targetAbi": "12.1.0.0",
+        "framework": "net10.0",
+        "sourceUrl": "https://github.com/zlx64/JellyPoll/releases/download/v1.0.17.20/jellypoll_1.0.17.20.zip",
+        "checksum": "151AC748EF1722DD6576C620D8991964",
+        "timestamp": "2026-09-19T22:13:08Z"
+      },
+      {
+        "version": "1.0.17.19",
+        "changelog": "See release notes at https://github.com/zlx64/JellyPoll/releases/tag/v1.0.17.19",
+        "targetAbi": "12.1.0.0",
+        "framework": "net10.0",
+        "sourceUrl": "https://github.com/zlx64/JellyPoll/releases/download/v1.0.17.19/jellypoll_1.0.17.19.zip",
+        "checksum": "BE956D9F4EE0F2027731321E30860C14",
+        "timestamp": "2026-09-19T22:08:29Z"
+      },
+      {
+        "version": "1.0.17.18",
+        "changelog": "See release notes at https://github.com/zlx64/JellyPoll/releases/tag/v1.0.17.18",
+        "targetAbi": "12.1.0.0",
+        "framework": "net10.0",
+        "sourceUrl": "https://github.com/zlx64/JellyPoll/releases/download/v1.0.17.18/jellypoll_1.0.17.18.zip",
+        "checksum": "AFAB73B7380FF0A4EEB73FDBFBFFD09F",
+        "timestamp": "2026-09-19T22:04:25Z"
+      },
+      {
+        "version": "1.0.17.17",
+        "changelog": "See release notes at https://github.com/zlx64/JellyPoll/releases/tag/v1.0.17.17",
+        "targetAbi": "12.1.0.0",
+        "framework": "net10.0",
+        "sourceUrl": "https://github.com/zlx64/JellyPoll/releases/download/v1.0.17.17/jellypoll_1.0.17.17.zip",
+        "checksum": "2796707667BF84F1CA49F7C9772DA56C",
+        "timestamp": "2026-09-19T21:59:19Z"
+      },
+      {
+        "version": "1.0.17.16",
+        "changelog": "See release notes at https://github.com/zlx64/JellyPoll/releases/tag/v1.0.17.16",
+        "targetAbi": "12.1.0.0",
+        "framework": "net10.0",
+        "sourceUrl": "https://github.com/zlx64/JellyPoll/releases/download/v1.0.17.16/jellypoll_1.0.17.16.zip",
+        "checksum": "02A4E4FE90C736FC0EA8C93B299E5325",
+        "timestamp": "2026-09-19T21:53:05Z"
+      },
+      {
+        "version": "1.0.17.15",
+        "changelog": "See release notes at https://github.com/zlx64/JellyPoll/releases/tag/v1.0.17.15",
+        "targetAbi": "12.1.0.0",
+        "framework": "net10.0",
+        "sourceUrl": "https://github.com/zlx64/JellyPoll/releases/download/v1.0.17.15/jellypoll_1.0.17.15.zip",
+        "checksum": "BFF30307AF4E96D1311330DFCF883E80",
+        "timestamp": "2026-09-19T21:37:45Z"
+      },
+      {
+        "version": "1.0.17.14",
+        "changelog": "See release notes at https://github.com/zlx64/JellyPoll/releases/tag/v1.0.17.14",
+        "targetAbi": "12.1.0.0",
+        "framework": "net10.0",
+        "sourceUrl": "https://github.com/zlx64/JellyPoll/releases/download/v1.0.17.14/jellypoll_1.0.17.14.zip",
+        "checksum": "5B5BB4742D1368E23CC2B35C84A05767",
+        "timestamp": "2026-09-19T21:13:37Z"
+      },
+      {
+        "version": "1.0.17.13",
+        "changelog": "See release notes at https://github.com/zlx64/JellyPoll/releases/tag/v1.0.17.13",
+        "targetAbi": "12.1.0.0",
+        "framework": "net10.0",
+        "sourceUrl": "https://github.com/zlx64/JellyPoll/releases/download/v1.0.17.13/jellypoll_1.0.17.13.zip",
+        "checksum": "AF1B60B9E1FF546397739F2DE49340FE",
+        "timestamp": "2026-09-19T20:54:53Z"
+      },
+      {
+        "version": "1.0.17.12",
+        "changelog": "See release notes at https://github.com/zlx64/JellyPoll/releases/tag/v1.0.17.12",
+        "targetAbi": "12.1.0.0",
+        "framework": "net10.0",
+        "sourceUrl": "https://github.com/zlx64/JellyPoll/releases/download/v1.0.17.12/jellypoll_1.0.17.12.zip",
+        "checksum": "AE80927841270713EF4C73C8BA69BAD4",
+        "timestamp": "2026-09-19T20:47:32Z"
+      },
+      {
+        "version": "1.0.17.11",
+        "changelog": "See release notes at https://github.com/zlx64/JellyPoll/releases/tag/v1.0.17.11",
+        "targetAbi": "12.1.0.0",
+        "framework": "net10.0",
+        "sourceUrl": "https://github.com/zlx64/JellyPoll/releases/download/v1.0.17.11/jellypoll_1.0.17.11.zip",
+        "checksum": "7C5A4C2D71654D5B745D15CF7E5164ED",
+        "timestamp": "2026-09-19T20:41:45Z"
+      },
+      {
+        "version": "1.0.17.10",
+        "changelog": "See release notes at https://github.com/zlx64/JellyPoll/releases/tag/v1.0.17.10",
+        "targetAbi": "12.1.0.0",
+        "framework": "net10.0",
+        "sourceUrl": "https://github.com/zlx64/JellyPoll/releases/download/v1.0.17.10/jellypoll_1.0.17.10.zip",
+        "checksum": "C9F7E6190A614AA816BF7C7C3C1555F3",
+        "timestamp": "2026-09-19T20:04:06Z"
+      },
+      {
+        "version": "1.0.17.9",
+        "changelog": "See release notes at https://github.com/zlx64/JellyPoll/releases/tag/v1.0.17.9",
+        "targetAbi": "12.1.0.0",
+        "framework": "net10.0",
+        "sourceUrl": "https://github.com/zlx64/JellyPoll/releases/download/v1.0.17.9/jellypoll_1.0.17.9.zip",
+        "checksum": "524F468F1A939B70126B01112B94BADE",
+        "timestamp": "2026-09-19T19:49:41Z"
+      },
+      {
+        "version": "1.0.17.8",
+        "changelog": "See release notes at https://github.com/zlx64/JellyPoll/releases/tag/v1.0.17.8",
+        "targetAbi": "12.1.0.0",
+        "framework": "net10.0",
+        "sourceUrl": "https://github.com/zlx64/JellyPoll/releases/download/v1.0.17.8/jellypoll_1.0.17.8.zip",
+        "checksum": "7601657DB4D1E1CB66D5CCBA9367579D",
+        "timestamp": "2026-09-19T19:23:31Z"
+      },
+      {
         "version": "1.0.17.7",
         "changelog": "See release notes at https://github.com/zlx64/JellyPoll/releases/tag/v1.0.17",
         "targetAbi": "12.1.0.0",

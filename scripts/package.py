@@ -3,22 +3,55 @@
 
 Usage: python scripts/package.py --version 1.0.0.0 --tag v1.0.0 --repo zlx64/JellyPoll
 
+- Copies docs/logo.png into ./publish and generates a pre-packaged meta.json
+  (plugin identity + imagePath, so manual installs show the logo and keep the
+  stable GUID instead of the folder-name MD5 fallback)
 - Zips everything in ./publish (files at zip root, jprm-compatible layout)
   to artifacts/jellypoll_<version>.zip
-- Computes SHA-256 checksum
+- Computes MD5 checksum
 - Inserts/replaces the version entry in ./manifest.json
 """
 
 import argparse
 import hashlib
 import json
+import shutil
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
 GUID = "3734440f-4b20-4c3a-86a3-d931b45b7248"
+NAME = "Jelly Poll"
+DESCRIPTION = "Group polls to choose what to watch together: suggest titles from the library, rank them, and crown the top 3."
+OVERVIEW = "Group movie polling with ranked ballots and a gold/silver/bronze podium."
+OWNER = "zlx64"
+CATEGORY = "General"
 TARGET_ABI = "12.1.0.0"
 FRAMEWORK = "net10.0"
+LOGO_SOURCE = Path("docs/logo.png")
+LOGO_NAME = "logo.png"
+
+
+def write_meta_json(publish: Path, version: str, repo: str, tag: str) -> None:
+    """Pre-packaged meta.json so manually installed zips keep the stable GUID,
+    the display name, and the plugin logo (imagePath is relative to the plugin
+    folder; the server serves it via /api/Plugins/{id}/{version}/Image)."""
+    meta = {
+        "category": CATEGORY,
+        "changelog": f"See release notes at https://github.com/{repo}/releases/tag/{tag}",
+        "description": DESCRIPTION,
+        "guid": GUID,
+        "name": NAME,
+        "overview": OVERVIEW,
+        "owner": OWNER,
+        "targetAbi": TARGET_ABI,
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "version": version,
+        "status": 0,  # PluginStatus.Active
+        "autoUpdate": True,
+        "imagePath": LOGO_NAME,
+    }
+    (publish / "meta.json").write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
 
 
 def main() -> None:
@@ -33,6 +66,11 @@ def main() -> None:
     publish = Path(args.publish_dir)
     if not publish.is_dir():
         raise SystemExit(f"Publish directory not found: {publish}")
+
+    if not LOGO_SOURCE.is_file():
+        raise SystemExit(f"Plugin logo not found: {LOGO_SOURCE}")
+    shutil.copy2(LOGO_SOURCE, publish / LOGO_NAME)
+    write_meta_json(publish, args.version, args.repo, args.tag)
 
     artifacts = Path(args.artifacts_dir)
     artifacts.mkdir(exist_ok=True)
@@ -56,14 +94,16 @@ def main() -> None:
     if entry is None:
         entry = {
             "guid": GUID,
-            "name": "JellyPoll",
-            "description": "Group polls to choose what to watch together: suggest titles from the library, rank them, and crown the top 3.",
-            "overview": "Group movie polling with ranked ballots and a gold/silver/bronze podium.",
-            "owner": "zlx64",
-            "category": "General",
+            "name": NAME,
+            "description": DESCRIPTION,
+            "overview": OVERVIEW,
+            "owner": OWNER,
+            "category": CATEGORY,
             "versions": [],
         }
         manifest.append(entry)
+    entry["name"] = NAME
+    entry["imageUrl"] = f"https://raw.githubusercontent.com/{args.repo}/main/docs/{LOGO_NAME}"
 
     source_url = f"https://github.com/{args.repo}/releases/download/{args.tag}/jellypoll_{args.version}.zip"
 

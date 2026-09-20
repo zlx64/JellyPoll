@@ -10,7 +10,4 @@ tests/e2e/shot-*.png
 .vs/
 
 # Local working documents (design docs, progress log) — not part of the public repo
-docs/
-PROGRESS.md
-
 temp/

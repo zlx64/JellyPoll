@@ -1,8 +1,6 @@
 # JellyPoll
 
-A [Jellyfin](https://jellyfin.org) plugin for group polls: everyone suggests titles from your library, ranks them in the order they want to watch them, and a **gold / silver / bronze** podium is crowned live — then you watch the winner together.
-
-🥇🥈🥉
+A [Jellyfin](https://jellyfin.org) plugin for group polls: everyone suggests titles from your library, ranks them in the order they want to watch them, and a **🥇gold / 🥈silver / 🥉bronze** podium is crowned live — then you watch the winner together.
 
 [![Jellyfin: 12.1+](https://img.shields.io/badge/Jellyfin-12.1%2B-000B25?style=flat-square)](https://jellyfin.org)
 [![Release](https://img.shields.io/github/v/release/zlx64/JellyPoll?style=flat-square&label=Release)](https://github.com/zlx64/JellyPoll/releases/latest)
@@ -131,7 +129,8 @@ Every push and pull request runs the build + unit tests (`.github/workflows/buil
 
 ## REST API
 
-All endpoints live under `/JellyPoll` and require a standard Jellyfin `Authorization` header.
+<details>
+<summary>All endpoints live under `/JellyPoll` and require a standard Jellyfin `Authorization` header.</summary>
 
 | Method | Route | Purpose |
 |---|---|---|
@@ -148,6 +147,7 @@ All endpoints live under `/JellyPoll` and require a standard Jellyfin `Authoriza
 | `DELETE` | `/JellyPoll/Polls/Closed` | delete all closed polls (admin) |
 | `GET` | `/JellyPoll/Polls/{id}/Results` | final results |
 | `GET` | `/JellyPoll/Polls/{id}/State?v=` | cheap change polling for live updates |
+</details>
 
 ## FAQ
 

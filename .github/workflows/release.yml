@@ -77,7 +77,7 @@ jobs:
         run: |
           gh release create "${{ github.ref_name }}" \
             "artifacts/jellypoll_${{ steps.ver.outputs.version }}.zip" \
-            --title "JellyPoll ${{ github.ref_name }}" \
+            --title "Jelly Poll ${{ github.ref_name }}" \
             --generate-notes
 
       # Tag checkout is a detached HEAD; push the manifest commit explicitly to main.

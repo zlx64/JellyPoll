@@ -22,7 +22,7 @@ public sealed class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     public static Plugin? Instance { get; private set; }
 
     /// <inheritdoc />
-    public override string Name => "JellyPoll";
+    public override string Name => "Jelly Poll";
 
     /// <inheritdoc />
     public override Guid Id => Guid.Parse("3734440f-4b20-4c3a-86a3-d931b45b7248");

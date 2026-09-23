@@ -57,7 +57,7 @@
   async function search() {
     searching = true;
     try {
-      const res = await jellyfin.searchItems(searchTerm.trim(), includeTypes);
+      const res = await jellyfin.searchItems(searchTerm.trim(), includeTypes, 10);
       results = res.Items;
     } finally {
       searching = false;
@@ -116,15 +116,19 @@
     {:else if collections.length === 0}
       <p class="dim small">No collections in your libraries.</p>
     {:else}
-      <div class="grid">
+      <div class="list">
         {#each collections as item (item.Id)}
-          <button class="item" onclick={() => suggest(item)} disabled={busyItemId === item.Id}>
-            <Poster itemId={item.Id} name={item.Name} size={72} />
-            <div class="label">
-              <div class="name">{item.Name}</div>
-              <div class="dim"><Icon name="stacks" size={11} /> Collection · {item.MovieCount} movie{item.MovieCount === 1 ? '' : 's'}</div>
+          <button class="row" onclick={() => suggest(item)} disabled={busyItemId === item.Id}>
+            <Poster itemId={item.Id} name={item.Name} size={32} />
+            <div class="info">
+              <span class="name">{item.Name}</span>
+              <span class="sub dim">
+                <Icon name="stacks" size={11} />
+                Collection · {item.MovieCount} movie{item.MovieCount === 1 ? '' : 's'}
+              </span>
             </div>
-            {#if busyItemId === item.Id}<span class="busy">Adding…</span>{/if}
+            <span class="addicon"><Icon name="add" size={18} /></span>
+            {#if busyItemId === item.Id}<span class="busy"><span class="busspin"></span></span>{/if}
           </button>
         {/each}
       </div>
@@ -134,18 +138,19 @@
   {#if searching}
     <p class="dim small"><Icon name="search" size={13} /> Searching…</p>
   {:else if results.length > 0}
-    <div class="grid">
+    <div class="list">
       {#each results as item (item.Id)}
-        <button class="item" onclick={() => suggest(item)} disabled={busyItemId === item.Id}>
-          <Poster itemId={item.Id} name={item.Name} size={72} />
-          <div class="label">
-            <div class="name">{item.Name}</div>
-            <div class="dim">
+        <button class="row" onclick={() => suggest(item)} disabled={busyItemId === item.Id}>
+          <Poster itemId={item.Id} name={item.Name} size={32} />
+          <div class="info">
+            <span class="name">{item.Name}</span>
+            <span class="sub dim">
               <Icon name={item.Type === 'BoxSet' ? 'stacks' : 'movie'} size={11} />
               {item.Type === 'BoxSet' ? 'Collection' : item.Type}{item.ProductionYear ? ' · ' + item.ProductionYear : ''}
-            </div>
+            </span>
           </div>
-          {#if busyItemId === item.Id}<span class="busy">Adding…</span>{/if}
+          <span class="addicon"><Icon name="add" size={18} /></span>
+          {#if busyItemId === item.Id}<span class="busy"><span class="busspin"></span></span>{/if}
         </button>
       {/each}
     </div>
@@ -180,35 +185,39 @@
     display: inline-flex; align-items: center; gap: 0.25rem;
   }
   .link:hover { background: transparent; text-decoration: underline; }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-    gap: 0.5rem; margin-top: 0.6rem;
-  }
-  .item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
+  .list { display: flex; flex-direction: column; gap: 0.3rem; margin-top: 0.6rem; }
+  .row {
+    display: flex; align-items: center; gap: 0.5rem;
+    width: 100%;
+    padding: 0.3rem 0.5rem;
     background: var(--jp-surface-2);
-    border: 1px solid var(--jp-border);
-    padding: 0.4rem;
+    border: 1px solid transparent;
+    border-radius: var(--jp-radius-sm);
     text-align: left;
     position: relative;
-    transition: border-color 0.12s ease, transform 0.12s ease;
+    transition: border-color 0.12s ease, background 0.12s ease;
   }
-  .item:hover:not(:disabled) { border-color: var(--jp-accent); transform: translateY(-1px); }
-  .label { padding: 0 0.15rem; }
+  .row:hover:not(:disabled) { border-color: var(--jp-border); background: var(--jp-surface-3); }
+  .info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.08rem; }
   .name {
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.8rem;
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    font-size: 0.86rem; font-weight: 500;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
-  .label .dim {
-    font-size: 0.72rem; margin-top: 0.15rem;
-    display: flex; align-items: center; gap: 0.2rem;
+  .sub {
+    font-size: 0.72rem;
+    display: inline-flex; align-items: center; gap: 0.25rem;
+    min-width: 0;
   }
+  .addicon { color: var(--jp-text-dim); display: inline-flex; flex-shrink: 0; transition: color 0.12s ease; }
+  .row:hover:not(:disabled) .addicon { color: var(--jp-accent); }
   .busy {
     position: absolute; inset: 0; display: grid; place-items: center;
-    background: rgba(0, 0, 0, 0.45); color: #fff; font-size: 0.75rem;
+    background: rgba(0, 0, 0, 0.45);
     border-radius: var(--jp-radius-sm);
+  }
+  .busspin {
+    width: 16px; height: 16px;
+    border: 2px solid #fff; border-top-color: transparent;
+    border-radius: 50%; animation: spin 0.7s linear infinite;
   }
 </style>

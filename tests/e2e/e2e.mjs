@@ -177,7 +177,7 @@ try {
   await page.waitForSelector('input[type="search"]', { timeout: 10000 });
   await page.fill('input[type="search"]', 'Kill Bill');
   await page.waitForTimeout(3000);
-  const killBillCard = page.locator('.picker .item, [class*="picker"] [class*="item"]').filter({ hasText: /Kill Bill/i }).first();
+  const killBillCard = page.locator('.picker .row').filter({ hasText: /Kill Bill/i }).first();
   await killBillCard.click({ timeout: 15000 });
   await page.waitForTimeout(2500);
   ok('suggested Kill Bill via search');
@@ -190,7 +190,7 @@ try {
     await browseToggle.click({ timeout: 10000 });
     await page.waitForTimeout(2500);
   }
-  const collCard = page.locator('.picker .item', { hasText: /Kung Fu Classics/i }).first();
+  const collCard = page.locator('.picker .row', { hasText: /Kung Fu Classics/i }).first();
   const collVisible = await collCard.waitFor({ timeout: 15000 }).then(() => true, () => false);
   if (collVisible) {
     await collCard.click({ timeout: 15000 });

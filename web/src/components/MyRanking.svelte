@@ -1,5 +1,6 @@
 <script lang="ts">
   import Poster from './Poster.svelte';
+  import { t } from '../lib/i18n.svelte';
   import { detailUrl } from '../lib/api';
   import type { PollDetail } from '../lib/types';
   import Icon from './Icon.svelte';
@@ -50,14 +51,14 @@
 </script>
 
 <div class="card">
-  <h3 class="sechead"><Icon name="star" size={18} /> My watch order</h3>
+  <h3 class="sechead"><Icon name="star" size={18} /> {t('ranking.title')}</h3>
   <p class="savehint" class:done={saved}>
     {#if saved}<Icon name="check" size={14} />{/if}
-    {saved ? 'Ranking saved' : 'Ranking saves automatically'}
+    {saved ? t('ranking.saved') : t('ranking.autoSave')}
   </p>
 
   {#if myBallot.length === 0}
-    <p class="empty dim"><Icon name="format_list_numbered" size={16} /> Rank the suggested titles — position 1 is your top pick. Drag cards or use the arrows.</p>
+    <p class="empty dim"><Icon name="format_list_numbered" size={16} /> {t('ranking.empty')}</p>
   {:else}
     <div class="list" role="list">
       {#each myBallot as sid, index (sid)}
@@ -73,7 +74,7 @@
             ondragend={onDragEnd}
           >
             <span class="rank" class:gold={index === 0} class:silver={index === 1} class:bronze={index === 2}>{index + 1}</span>
-            <span class="handle" title="Drag to reorder"><Icon name="drag_indicator" size={16} /></span>
+            <span class="handle" title={t('ranking.dragTitle')}><Icon name="drag_indicator" size={16} /></span>
             <Poster itemId={s.ItemId} name={s.Name} size={32} missing={s.ItemMissing} />
             <div class="info">
               {#if s.ItemMissing}
@@ -84,9 +85,9 @@
               {/if}
             </div>
             <span class="controls">
-              <button class="iconbtn" title="Move up" onclick={() => move(index, -1)} disabled={index === 0}><Icon name="arrow_upward" size={16} /></button>
-              <button class="iconbtn" title="Move down" onclick={() => move(index, 1)} disabled={index === myBallot.length - 1}><Icon name="arrow_downward" size={16} /></button>
-              <button class="iconbtn danger" title="Remove from my ranking" onclick={() => onRemove(sid)}><Icon name="close" size={16} /></button>
+              <button class="iconbtn" title={t('ranking.moveUp')} onclick={() => move(index, -1)} disabled={index === 0}><Icon name="arrow_upward" size={16} /></button>
+              <button class="iconbtn" title={t('ranking.moveDown')} onclick={() => move(index, 1)} disabled={index === myBallot.length - 1}><Icon name="arrow_downward" size={16} /></button>
+              <button class="iconbtn danger" title={t('ranking.removeTitle')} onclick={() => onRemove(sid)}><Icon name="close" size={16} /></button>
             </span>
           </div>
         {/if}

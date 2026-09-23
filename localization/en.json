@@ -1,0 +1,153 @@
+{
+  "common": {
+    "loading": "Loading…",
+    "cancel": "Cancel",
+    "close": "Close",
+    "jellyfinHome": "Jellyfin home",
+    "backToHome": "Back to the Jellyfin home page",
+    "allPolls": "All polls",
+    "backToPolls": "Back to all polls"
+  },
+  "status": {
+    "open": "open",
+    "closed": "closed"
+  },
+  "types": {
+    "Movie": "Movie",
+    "BoxSet": "Collection",
+    "Episode": "Episode",
+    "Series": "Series"
+  },
+  "login": {
+    "subtitle": "Sign in with your Jellyfin account",
+    "usernamePlaceholder": "Username",
+    "passwordPlaceholder": "Password",
+    "signIn": "Sign in",
+    "signingIn": "Signing in…",
+    "failed": "Login failed ({status}). Check your username and password."
+  },
+  "polls": {
+    "newPoll": "New poll",
+    "titlePlaceholder": "Poll title (e.g. Friday Night)",
+    "allowMovies": "Allow movies (always)",
+    "allowEpisodes": "Allow TV episodes",
+    "allowSeries": "Allow TV series",
+    "creating": "Creating…",
+    "create": "Create",
+    "active": "Active",
+    "past": "Past",
+    "openPoll": "Open poll",
+    "results": "Results",
+    "deleteAllClosed": "Delete all closed",
+    "deleteAllClosedConfirm": "Delete all closed polls ({count})? This cannot be undone.",
+    "closedOn": "closed {date}",
+    "by": "by {name} · {date}",
+    "suggestions": {
+      "one": "{count} suggestion",
+      "other": "{count} suggestions"
+    },
+    "voted": {
+      "one": "{count} voted",
+      "other": "{count} voted"
+    },
+    "empty": "No polls yet. Create the first one!"
+  },
+  "room": {
+    "closePoll": "Close poll",
+    "closePollConfirm": "Close this poll and finalize the podium?",
+    "reopen": "Reopen",
+    "finalResults": "Final results",
+    "watchNow": "Watch \"{name}\" now",
+    "standings": "Standings",
+    "live": "live"
+  },
+  "picker": {
+    "title": "Suggest a title",
+    "searchPlaceholder": "Search the library…",
+    "browseCollections": "Browse collections",
+    "collections": "Collections",
+    "loadingCollections": "Loading collections…",
+    "noCollections": "No collections in your libraries.",
+    "collectionMovies": {
+      "one": "Collection · {count} movie",
+      "other": "Collection · {count} movies"
+    },
+    "searching": "Searching…",
+    "noResults": "No results.",
+    "hint": "Search your library and tap a title to add it to this poll.",
+    "added": "\"{name}\" added to the poll.",
+    "collectionAdded": {
+      "one": "\"{name}\" — {count} movie added",
+      "other": "\"{name}\" — {count} movies added"
+    },
+    "alreadyInPoll": {
+      "one": "{count} already in poll",
+      "other": "{count} already in poll"
+    },
+    "skippedOverLimit": {
+      "one": "{count} skipped (limit reached)",
+      "other": "{count} skipped (limit reached)"
+    }
+  },
+  "board": {
+    "suggested": "Suggested",
+    "empty": "Nothing suggested yet — be the first!",
+    "by": "by {name}",
+    "missing": "no longer in library",
+    "addTitle": "Add to my watch order",
+    "order": "order",
+    "inOrderTitle": "In your watch order",
+    "inOrder": "in my order",
+    "removeTitle": "Remove from poll",
+    "removeConfirm": "Remove \"{name}\" from the poll?"
+  },
+  "ranking": {
+    "title": "My watch order",
+    "saved": "Ranking saved",
+    "autoSave": "Ranking saves automatically",
+    "empty": "Rank the suggested titles — position 1 is your top pick. Drag cards or use the arrows.",
+    "dragTitle": "Drag to reorder",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "removeTitle": "Remove from my ranking"
+  },
+  "standings": {
+    "empty": "No votes yet.",
+    "votes": {
+      "one": "{count} vote",
+      "other": "{count} votes"
+    },
+    "firstPlaces": {
+      "one": "{count} first",
+      "other": "{count} firsts"
+    },
+    "points": {
+      "one": "{count} pt",
+      "other": "{count} pts"
+    }
+  },
+  "errors": {
+    "unauthenticated": "Session expired. Please sign in again.",
+    "forbidden": "You are not allowed to perform this action.",
+    "not_found": "Not found.",
+    "poll_closed": "Poll is closed.",
+    "item_forbidden": "You do not have access to this item.",
+    "item_type_not_allowed": "This item type is not allowed in this poll.",
+    "suggestion_limit_reached": "Suggestion limit reached.",
+    "duplicate_suggestion": "This title is already in the poll."
+  },
+  "config": {
+    "allowEpisodes": "Allow TV episodes in new polls by default",
+    "allowSeries": "Allow TV series in new polls by default",
+    "maxSuggestions": "Max suggestions per user per poll (0 = unlimited)",
+    "liveStandings": "Show live standings while polls are open",
+    "language": "Interface language",
+    "languageAuto": "Auto (follow Jellyfin)",
+    "save": "Save",
+    "menuLink": "Add \"Jelly Polls\" link to main menu (all users)",
+    "menuLinkInstalled": "Menu link installed. Reload the web client (F5) to see the \"Jelly Polls\" button.",
+    "menuLinkManual": "The web client folder is read-only (typical in Docker). Add the menuLinks entry to config.json manually — see the plugin README. Everyone can still use the polls via the \"Jelly Polls\" menu entry or /JellyPoll/Web/.",
+    "menuLinkRemoved": "Menu link removed.",
+    "menuLinkError": "Could not write web config.json — see README for the manual steps."
+  }
+}

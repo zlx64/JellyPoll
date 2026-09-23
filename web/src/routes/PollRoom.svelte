@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { jellypoll, ApiError } from '../lib/api';
+  import { t, errorMessage } from '../lib/i18n.svelte';
   import type { PollDetail } from '../lib/types';
   import SuggestPicker from '../components/SuggestPicker.svelte';
   import SuggestionBoard from '../components/SuggestionBoard.svelte';
@@ -35,7 +36,7 @@
       }
       error = '';
     } catch (e) {
-      error = e instanceof Error ? e.message : String(e);
+      error = errorMessage(e);
     }
   }
 
@@ -99,17 +100,17 @@
         await load();
         return;
       }
-      showToast(e instanceof Error ? e.message : String(e), true);
+      showToast(errorMessage(e), true);
     }
   }
 
   async function closePoll() {
-    if (!confirm('Close this poll and finalize the podium?')) return;
+    if (!confirm(t('room.closePollConfirm'))) return;
     try {
       await jellypoll.closePoll(pollId);
       await load();
     } catch (e) {
-      showToast(e instanceof Error ? e.message : String(e), true);
+      showToast(errorMessage(e), true);
     }
   }
 
@@ -118,7 +119,7 @@
       await jellypoll.reopenPoll(pollId);
       await load();
     } catch (e) {
-      showToast(e instanceof Error ? e.message : String(e), true);
+      showToast(errorMessage(e), true);
     }
   }
 
@@ -139,7 +140,7 @@
         await jellypoll.saveBallot(pollId, myBallot);
         saved = true;
       } catch (e) {
-        showToast(e instanceof Error ? e.message : String(e), true);
+        showToast(errorMessage(e), true);
       }
     }
     await load();
@@ -155,27 +156,27 @@
 {#if detail}
   <div class="page">
     <div class="header">
-      <a class="home" href={homeUrl} title="Back to the Jellyfin home page">
-        <Icon name="home" size={18} /> <span>Jellyfin home</span>
+      <a class="home" href={homeUrl} title={t('common.backToHome')}>
+        <Icon name="home" size={18} /> <span>{t('common.jellyfinHome')}</span>
       </a>
-      <a class="home" href="#/polls" title="Back to all polls">
-        <Icon name="format_list_numbered" size={18} /> <span>All polls</span>
+      <a class="home" href="#/polls" title={t('common.backToPolls')}>
+        <Icon name="format_list_numbered" size={18} /> <span>{t('common.allPolls')}</span>
       </a>
       <h1>
         <Icon name="how_to_vote" size={22} class="titleicon" />
         <span class="titletext">{detail.Poll.Title}</span>
         {#if detail.Poll.Status === 'open'}
-          <span class="chip open"><Icon name="how_to_vote" size={12} /> open</span>
+          <span class="chip open"><Icon name="how_to_vote" size={12} /> {t('status.open')}</span>
         {:else}
-          <span class="chip"><Icon name="lock" size={12} /> closed</span>
+          <span class="chip"><Icon name="lock" size={12} /> {t('status.closed')}</span>
         {/if}
       </h1>
       <div class="manage">
         {#if detail.IsCreator || detail.IsAdmin}
           {#if detail.Poll.Status === 'open'}
-            <button class="primary" onclick={closePoll}><Icon name="lock" size={16} /> Close poll</button>
+            <button class="primary" onclick={closePoll}><Icon name="lock" size={16} /> {t('room.closePoll')}</button>
           {:else}
-            <button onclick={reopenPoll}><Icon name="refresh" size={16} /> Reopen</button>
+            <button onclick={reopenPoll}><Icon name="refresh" size={16} /> {t('room.reopen')}</button>
           {/if}
         {/if}
       </div>
@@ -184,12 +185,12 @@
     {#if error}<div class="error-box"><Icon name="error" size={16} /> {error}</div>{/if}
 
     {#if detail.Poll.Status === 'closed'}
-      <h2 class="finalhead"><Icon name="trophy" size={22} class="goldicon" /> Final results</h2>
+      <h2 class="finalhead"><Icon name="trophy" size={22} class="goldicon" /> {t('room.finalResults')}</h2>
       <Standings standings={detail.Standings} closed={true} />
       {#if gold}
         <a class="card watchnext" href={detailLink} target="_blank" rel="noreferrer">
           <Icon name="play_arrow" size={20} class="playicon" />
-          <span>Watch "{gold.Name}" now</span>
+          <span>{t('room.watchNow', { name: gold.Name })}</span>
           <Icon name="open_in_new" size={15} class="exticon" />
         </a>
       {/if}
@@ -204,7 +205,7 @@
         </div>
         <div class="col">
           <div class="card">
-            <h3 class="sechead"><Icon name="trophy" size={18} /><span>Standings <span class="live">live</span></span></h3>
+            <h3 class="sechead"><Icon name="trophy" size={18} /><span>{t('room.standings')} <span class="live">{t('room.live')}</span></span></h3>
             <Standings standings={detail.Standings} />
           </div>
         </div>
@@ -219,7 +220,7 @@
     {/if}
   </div>
 {:else}
-  <p class="dim">Loading…</p>
+  <p class="dim">{t('common.loading')}</p>
   {#if error}<div class="error-box">{error}</div>{/if}
 {/if}
 

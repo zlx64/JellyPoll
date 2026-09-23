@@ -11,21 +11,29 @@
         <h2>Jelly Polls</h2>
         <form id="jellypollConfigForm">
           <div class="checkboxContainer">
-            <label><input is="emby-checkbox" type="checkbox" id="chkEpisodes" /><span>Allow TV episodes in new polls by default</span></label>
+            <label><input is="emby-checkbox" type="checkbox" id="chkEpisodes" /><span data-i18n="config.allowEpisodes">Allow TV episodes in new polls by default</span></label>
           </div>
           <div class="checkboxContainer">
-            <label><input is="emby-checkbox" type="checkbox" id="chkSeries" /><span>Allow TV series in new polls by default</span></label>
+            <label><input is="emby-checkbox" type="checkbox" id="chkSeries" /><span data-i18n="config.allowSeries">Allow TV series in new polls by default</span></label>
           </div>
           <div class="inputContainer">
-            <label class="inputLabel" for="numMaxSuggestions">Max suggestions per user per poll (0 = unlimited)</label>
+            <label class="inputLabel" for="numMaxSuggestions" data-i18n="config.maxSuggestions">Max suggestions per user per poll (0 = unlimited)</label>
             <input is="emby-input" type="number" min="0" step="1" id="numMaxSuggestions" />
           </div>
           <div class="checkboxContainer">
-            <label><input is="emby-checkbox" type="checkbox" id="chkLiveStandings" /><span>Show live standings while polls are open</span></label>
+            <label><input is="emby-checkbox" type="checkbox" id="chkLiveStandings" /><span data-i18n="config.liveStandings">Show live standings while polls are open</span></label>
+          </div>
+          <div class="selectContainer">
+            <label class="selectLabel" for="selLanguage" data-i18n="config.language">Interface language</label>
+            <select is="emby-select" id="selLanguage">
+              <option value="" data-i18n="config.languageAuto">Auto (follow Jellyfin)</option>
+              <option value="en">English</option>
+              <option value="uk">Українська</option>
+            </select>
           </div>
           <div>
-            <button is="emby-button" type="submit" class="raised button-submit emby-button"><span>Save</span></button>
-            <button is="emby-button" type="button" id="btnInstallMenuLink" class="raised emby-button"><span>Add "Jelly Polls" link to main menu (all users)</span></button>
+            <button is="emby-button" type="submit" class="raised button-submit emby-button"><span data-i18n="config.save">Save</span></button>
+            <button is="emby-button" type="button" id="btnInstallMenuLink" class="raised emby-button"><span data-i18n="config.menuLink">Add "Jelly Polls" link to main menu (all users)</span></button>
             <p id="menuLinkResult" class="fieldDescription"></p>
           </div>
         </form>
@@ -34,6 +42,68 @@
     <script type="text/javascript">
       (function () {
         var pluginId = '3734440f-4b20-4c3a-86a3-d931b45b7248';
+        var SUPPORTED_LANGS = ['en', 'uk'];
+        var currentDict = null;
+
+        function baseLang(code) {
+          return (code || '').replace(/_/g, '-').split('-')[0].toLowerCase();
+        }
+
+        // Same resolution chain as the SPA (docs/localization-plan.md §4.2):
+        // admin override -> the viewer's Jellyfin language choice -> browser
+        // language -> "en".
+        function resolveLang(config) {
+          var candidates = [];
+          if (config && config.DisplayLanguage) candidates.push(config.DisplayLanguage);
+          try {
+            var userId = ApiClient.getCurrentUserId();
+            if (userId) {
+              var stored = localStorage.getItem(userId + '-language');
+              if (stored) candidates.push(stored);
+            }
+          } catch (e) { /* no session */ }
+          if (navigator.language) candidates.push(navigator.language);
+          for (var i = 0; i < candidates.length; i++) {
+            var base = baseLang(candidates[i]);
+            if (SUPPORTED_LANGS.indexOf(base) !== -1) return base;
+          }
+          return 'en';
+        }
+
+        // Keys are two-level: "namespace.key" -> entry, mirroring
+        // web/src/lib/i18n.svelte.ts. The dictionaries are nested objects,
+        // so a flat dict[key] lookup would always miss.
+        function dictGet(dict, key) {
+          if (!dict) return undefined;
+          var dot = key.indexOf('.');
+          if (dot === -1) return dict[key];
+          var ns = dict[key.slice(0, dot)];
+          if (!ns) return undefined;
+          return ns[key.slice(dot + 1)];
+        }
+
+        function applyDict(dict) {
+          currentDict = dict;
+          var nodes = document.querySelectorAll('[data-i18n]');
+          for (var i = 0; i < nodes.length; i++) {
+            var value = dictGet(dict, nodes[i].getAttribute('data-i18n'));
+            if (typeof value === 'string') nodes[i].textContent = value;
+          }
+        }
+
+        function loadI18n(config) {
+          var lang = resolveLang(config);
+          document.documentElement.lang = lang;
+          fetch(ApiClient.getUrl('/JellyPoll/Localization/' + lang))
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (dict) { if (dict) applyDict(dict); })
+            .catch(function () { /* keep the English defaults in the markup */ });
+        }
+
+        function tCfg(key, fallback) {
+          var value = dictGet(currentDict, key);
+          return typeof value === 'string' ? value : fallback;
+        }
 
         function load() {
           ApiClient.getPluginConfiguration(pluginId).then(function (config) {
@@ -41,6 +111,8 @@
             document.querySelector('#chkSeries').checked = config.DefaultAllowSeries !== false;
             document.querySelector('#numMaxSuggestions').value = config.MaxSuggestionsPerUser || 0;
             document.querySelector('#chkLiveStandings').checked = config.ShowLiveStandings !== false;
+            document.querySelector('#selLanguage').value = config.DisplayLanguage || '';
+            loadI18n(config);
           });
         }
 
@@ -51,7 +123,11 @@
             config.DefaultAllowSeries = document.querySelector('#chkSeries').checked;
             config.MaxSuggestionsPerUser = parseInt(document.querySelector('#numMaxSuggestions').value, 10) || 0;
             config.ShowLiveStandings = document.querySelector('#chkLiveStandings').checked;
-            ApiClient.updatePluginConfiguration(pluginId, config).then(Dashboard.processServerConfigurationUpdateResult);
+            config.DisplayLanguage = document.querySelector('#selLanguage').value;
+            ApiClient.updatePluginConfiguration(pluginId, config).then(function (result) {
+              Dashboard.processServerConfigurationUpdateResult(result);
+              loadI18n(config);
+            });
           });
           return false;
         });
@@ -67,14 +143,14 @@
           }).then(function (r) { return r.json(); }).then(function (res) {
             var el = document.querySelector('#menuLinkResult');
             if (res.Installed) {
-              el.textContent = 'Menu link installed. Reload the web client (F5) to see the "Jelly Polls" button.';
+              el.textContent = tCfg('config.menuLinkInstalled', 'Menu link installed. Reload the web client (F5) to see the "Jelly Polls" button.');
             } else if (res.Manual) {
-              el.textContent = 'The web client folder is read-only (typical in Docker). Add the menuLinks entry to config.json manually — see the plugin README. Everyone can still use the polls via the "Jelly Polls" menu entry or /JellyPoll/Web/.';
+              el.textContent = tCfg('config.menuLinkManual', 'The web client folder is read-only (typical in Docker). Add the menuLinks entry to config.json manually — see the plugin README. Everyone can still use the polls via the "Jelly Polls" menu entry or /JellyPoll/Web/.');
             } else {
-              el.textContent = 'Menu link removed.';
+              el.textContent = tCfg('config.menuLinkRemoved', 'Menu link removed.');
             }
           }).catch(function () {
-            document.querySelector('#menuLinkResult').textContent = 'Could not write web config.json — see README for the manual steps.';
+            document.querySelector('#menuLinkResult').textContent = tCfg('config.menuLinkError', 'Could not write web config.json — see README for the manual steps.');
           });
         });
 

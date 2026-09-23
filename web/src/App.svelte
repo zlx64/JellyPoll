@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { auth, initAuth, restoreSession } from './lib/auth.svelte';
+  import { jellypoll } from './lib/api';
+  import { initI18n, t } from './lib/i18n.svelte';
   import Login from './routes/Login.svelte';
   import PollsList from './routes/PollsList.svelte';
   import PollRoom from './routes/PollRoom.svelte';
@@ -25,10 +27,29 @@
   $effect(() => {
     if (auth.status === 'checking') initAuth();
   });
+
+  // Admin's global UI language override ("" = auto), fetched per session user.
+  let displayOverride = $state('');
+  $effect(() => {
+    if (!auth.userId) return;
+    jellypoll
+      .publicConfig()
+      .then((cfg) => {
+        displayOverride = cfg.displayLanguage ?? '';
+      })
+      .catch(() => {
+        displayOverride = '';
+      });
+  });
+
+  // Re-resolve the UI language whenever the session user or override changes.
+  $effect(() => {
+    initI18n(auth.userId, displayOverride);
+  });
 </script>
 
 {#if auth.status === 'checking'}
-  <p class="dim center">Loading…</p>
+  <p class="dim center">{t('common.loading')}</p>
 {:else if auth.status === 'logged-out'}
   <Login />
 {:else if route.name === 'poll' && route.id}

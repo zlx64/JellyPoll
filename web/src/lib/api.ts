@@ -2,6 +2,7 @@
 // Authorization: MediaBrowser header (doc 04 §1, doc 05 §5).
 
 import { auth, authHeader, logout } from './auth.svelte';
+import { t } from './i18n.svelte';
 import type { JellyfinSearchResult, PollDetail, PollSummary, Results, Suggestion } from './types';
 
 export class ApiError extends Error {
@@ -24,7 +25,7 @@ async function request<T>(path: string, init: RequestInit): Promise<T> {
 
   if (res.status === 401) {
     logout();
-    throw new ApiError(401, 'unauthenticated', 'Session expired.');
+    throw new ApiError(401, 'unauthenticated', t('errors.unauthenticated'));
   }
 
   if (!res.ok) {
@@ -53,6 +54,8 @@ export const jellypoll = {
   listPolls: () => request<{ Polls: PollSummary[]; IsAdmin: boolean }>('/JellyPoll/Polls', { method: 'GET' }),
 
   deleteAllClosedPolls: () => request<{ DeletedCount: number }>('/JellyPoll/Polls/Closed', { method: 'DELETE' }),
+
+  publicConfig: () => request<{ displayLanguage: string }>('/JellyPoll/PublicConfig', { method: 'GET' }),
 
   createPoll: (title: string, allowEpisodes?: boolean, allowSeries?: boolean) =>
     request<PollDetail>('/JellyPoll/Polls', {

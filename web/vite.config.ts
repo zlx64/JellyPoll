@@ -10,6 +10,9 @@ export default defineConfig({
     emptyOutDir: true
   },
   server: {
+    fs: {
+      allow: ['..']
+    },
     proxy: {
       '/JellyPoll': 'http://localhost:8096',
       '/Items': 'http://localhost:8096',

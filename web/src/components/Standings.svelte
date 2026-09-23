@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { StandingEntry } from '../lib/types';
+  import { t } from '../lib/i18n.svelte';
   import { detailUrl } from '../lib/api';
   import Poster from './Poster.svelte';
   import Icon from './Icon.svelte';
@@ -14,7 +15,7 @@
 </script>
 
 {#if standings.length === 0}
-  <p class="empty dim"><Icon name="group" size={16} /> No votes yet.</p>
+  <p class="empty dim"><Icon name="group" size={16} /> {t('standings.empty')}</p>
 {:else}
   <ol class="list">
     {#each standings as entry, i (entry.SuggestionId)}
@@ -34,11 +35,11 @@
             <a class="name titlelink" href={detailUrl(entry.ItemId)} target="_blank" rel="noreferrer">{entry.Name}</a>
           {/if}
           <span class="sub dim">
-            <Icon name="group" size={11} /> {entry.VoterCount} vote{entry.VoterCount === 1 ? '' : 's'}
-            {#if entry.FirstPlaceCount > 0} · {entry.FirstPlaceCount} first{entry.FirstPlaceCount === 1 ? '' : 's'}{/if}
+            <Icon name="group" size={11} /> {t('standings.votes', { count: entry.VoterCount })}
+            {#if entry.FirstPlaceCount > 0} · {t('standings.firstPlaces', { count: entry.FirstPlaceCount })}{/if}
           </span>
         </div>
-        <span class="pts">{entry.Points} pt{entry.Points === 1 ? '' : 's'}</span>
+        <span class="pts">{t('standings.points', { count: entry.Points })}</span>
       </li>
     {/each}
   </ol>

@@ -1,6 +1,8 @@
 // Same-origin auth (doc 05 §5): reuse jellyfin-web's token from localStorage,
 // validate it, fall back to a login form.
 
+import { t } from './i18n.svelte';
+
 interface JellyfinCredentials {
   Servers?: Array<{
     Id?: string;
@@ -93,7 +95,7 @@ export async function login(username: string, password: string): Promise<void> {
     body: JSON.stringify({ Username: username, Pw: password })
   });
   if (!res.ok) {
-    throw new Error('Login failed (' + res.status + '). Check your username and password.');
+    throw new Error(t('login.failed', { status: res.status }));
   }
   const data = (await res.json()) as { AccessToken: string; User: { Id: string; SessionInfo?: { ServerId?: string } } };
   auth.token = data.AccessToken;

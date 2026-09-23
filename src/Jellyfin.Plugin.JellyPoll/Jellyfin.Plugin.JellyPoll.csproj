@@ -27,6 +27,8 @@
     <EmbeddedResource Include="Web\**\*" Prefix="Jellyfin.Plugin.JellyPoll.Web" />
     <EmbeddedResource Include="Configuration\configPage.html" />
     <EmbeddedResource Include="Nav\nav-inject.js" LogicalName="Jellyfin.Plugin.JellyPoll.Nav.nav-inject.js" />
+    <EmbeddedResource Include="..\..\localization\en.json" LogicalName="Jellyfin.Plugin.JellyPoll.Localization.en.json" />
+    <EmbeddedResource Include="..\..\localization\uk.json" LogicalName="Jellyfin.Plugin.JellyPoll.Localization.uk.json" />
   </ItemGroup>
 
 </Project>

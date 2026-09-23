@@ -1,6 +1,7 @@
 <script lang="ts">
   import Poster from './Poster.svelte';
   import { auth } from '../lib/auth.svelte';
+  import { t, errorMessage } from '../lib/i18n.svelte';
   import { jellypoll, detailUrl } from '../lib/api';
   import type { PollDetail, Suggestion } from '../lib/types';
   import Icon from './Icon.svelte';
@@ -27,21 +28,21 @@
   }
 
   async function remove(s: Suggestion) {
-    if (!confirm(`Remove "${s.Name}" from the poll?`)) return;
+    if (!confirm(t('board.removeConfirm', { name: s.Name }))) return;
     try {
       await jellypoll.removeSuggestion(detail.Poll.Id, s.Id);
       onChanged();
     } catch (e) {
-      alert(e instanceof Error ? e.message : String(e));
+      alert(errorMessage(e));
     }
   }
 </script>
 
 <div class="board">
-  <h3 class="sechead"><Icon name="how_to_vote" size={18} /><span>Suggested <span class="count">({detail.Suggestions.length})</span></span></h3>
+  <h3 class="sechead"><Icon name="how_to_vote" size={18} /><span>{t('board.suggested')} <span class="count">({detail.Suggestions.length})</span></span></h3>
 
   {#if detail.Suggestions.length === 0}
-    <p class="empty dim"><Icon name="movie" size={16} /> Nothing suggested yet — be the first!</p>
+    <p class="empty dim"><Icon name="movie" size={16} /> {t('board.empty')}</p>
   {:else}
     <ul class="list">
       {#each detail.Suggestions as s (s.Id)}
@@ -57,19 +58,19 @@
               {#if s.Year}<span class="year dim">{s.Year}</span>{/if}
             </div>
             <div class="by dim">
-              <Icon name="group" size={11} /> by {s.SuggestedByName}
-              {#if s.ItemMissing}<Icon name="visibility_off" size={12} /> no longer in library{/if}
+              <Icon name="group" size={11} /> {t('board.by', { name: s.SuggestedByName })}
+              {#if s.ItemMissing}<Icon name="visibility_off" size={12} /> {t('board.missing')}{/if}
             </div>
           </div>
           {#if detail.Poll.Status === 'open' && !inMyOrder(s) && !s.ItemMissing}
-            <button class="addbtn" title="Add to my watch order" onclick={() => onAddToOrder(s.Id)}>
-              <Icon name="add" size={14} /> order
+            <button class="addbtn" title={t('board.addTitle')} onclick={() => onAddToOrder(s.Id)}>
+              <Icon name="add" size={14} /> {t('board.order')}
             </button>
           {:else if inMyOrder(s)}
-            <span class="chip success" title="In your watch order"><Icon name="check" size={12} /> in my order</span>
+            <span class="chip success" title={t('board.inOrderTitle')}><Icon name="check" size={12} /> {t('board.inOrder')}</span>
           {/if}
           {#if canRemove(s)}
-            <button class="iconbtn danger" title="Remove from poll" onclick={() => remove(s)}>
+            <button class="iconbtn danger" title={t('board.removeTitle')} onclick={() => remove(s)}>
               <Icon name="close" size={16} />
             </button>
           {/if}

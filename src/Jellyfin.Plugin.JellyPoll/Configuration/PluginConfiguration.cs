@@ -23,4 +23,11 @@ public class PluginConfiguration : BasePluginConfiguration
     /// (no webroot modification).
     /// </summary>
     public bool ShowMainNavEntry { get; set; } = true;
+
+    /// <summary>
+    /// Global UI language override for the SPA and the dashboard config page
+    /// (docs/localization-plan.md §4.2). "" = auto — each viewer's own
+    /// Jellyfin/browser language is used. Supported: "en", "uk".
+    /// </summary>
+    public string DisplayLanguage { get; set; } = "";
 }

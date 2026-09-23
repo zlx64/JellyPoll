@@ -106,27 +106,29 @@
 
     // ---- Legacy drawer (hidden on Jellyfin 12's default layout; helps
     //      non-default/older layouts and the official Android web shell) ----
+    // Anchor lookup is language-independent (audit fix): href first (JF 10/11
+    // drawers use real hrefs like #/mypreferencesmenu), then the stable
+    // btnSettings class (JF 12's drawer Settings item has href="#"). Never
+    // match on localized label text.
+    function findDrawerAnchor(items) {
+        for (var i = 0; i < items.length; i++) {
+            var href = (items[i].getAttribute('href') || '').toLowerCase();
+            if (href.indexOf('mypreferencesmenu') >= 0 || href.indexOf('myprofile') >= 0 || href.indexOf('/userprofile') >= 0) {
+                return items[i];
+            }
+        }
+        for (var j = 0; j < items.length; j++) {
+            var cls = (items[j].className || '').toString().toLowerCase();
+            if (cls.indexOf('btnsettings') >= 0) return items[j];
+        }
+        return null;
+    }
+
     function injectDrawer() {
         try {
             var items = document.querySelectorAll('.mainDrawer .navMenuOption, .navMenuOption');
             if (!items.length) return;
-            var anchor = null;
-            for (var i = 0; i < items.length; i++) {
-                var t = (items[i].textContent || '').trim().toLowerCase();
-                if (t === 'settings' || t === 'preferences' || t === 'profile') {
-                    anchor = items[i];
-                    break;
-                }
-            }
-            if (!anchor) {
-                for (var j = 0; j < items.length; j++) {
-                    var href = (items[j].getAttribute('href') || '').toLowerCase();
-                    if (href.indexOf('mypreferencesmenu') >= 0 || href.indexOf('myprofile') >= 0) {
-                        anchor = items[j];
-                        break;
-                    }
-                }
-            }
+            var anchor = findDrawerAnchor(items);
             if (!anchor) return;
             var parent = anchor.parentElement;
             if (!parent) return;

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { jellypoll, ApiError } from '../lib/api';
+  import { jellypoll } from '../lib/api';
+  import { t, errorMessage } from '../lib/i18n.svelte';
   import type { PollSummary } from '../lib/types';
   import Icon from '../components/Icon.svelte';
 
@@ -23,17 +24,17 @@
       isAdmin = res.IsAdmin;
       error = '';
     } catch (e) {
-      error = e instanceof Error ? e.message : String(e);
+      error = errorMessage(e);
     }
   }
 
   async function deleteClosedPolls() {
-    if (!confirm(`Delete all closed polls (${closedPolls.length})? This cannot be undone.`)) return;
+    if (!confirm(t('polls.deleteAllClosedConfirm', { count: closedPolls.length }))) return;
     try {
       await jellypoll.deleteAllClosedPolls();
       await load();
     } catch (e) {
-      error = e instanceof Error ? e.message : String(e);
+      error = errorMessage(e);
     }
   }
 
@@ -52,7 +53,7 @@
       const detail = await jellypoll.createPoll(newTitle.trim(), newEpisodes, newSeries);
       location.hash = '#/poll/' + detail.Poll.Id;
     } catch (e) {
-      error = e instanceof ApiError || e instanceof Error ? e.message : String(e);
+      error = errorMessage(e);
       creating = false;
     }
   }
@@ -63,12 +64,12 @@
 
 <div class="page">
   <div class="header">
-    <a class="home" href={homeUrl} title="Back to the Jellyfin home page">
-      <Icon name="home" size={18} /> <span>Jellyfin home</span>
+    <a class="home" href={homeUrl} title={t('common.backToHome')}>
+      <Icon name="home" size={18} /> <span>{t('common.jellyfinHome')}</span>
     </a>
     <h1><Icon name="how_to_vote" size={26} /> Jelly Polls</h1>
     <button class="primary" onclick={() => (showNewDialog = true)}>
-      <Icon name="add" size={18} /> New poll
+      <Icon name="add" size={18} /> {t('polls.newPoll')}
     </button>
   </div>
 
@@ -78,17 +79,17 @@
     <div class="overlay" role="dialog" onclick={(e) => e.target === e.currentTarget && (showNewDialog = false)}>
       <div class="card dialog">
         <div class="titlebar">
-          <h3>New poll</h3>
-          <button class="iconbtn" title="Close" onclick={() => (showNewDialog = false)}><Icon name="close" size={18} /></button>
+          <h3>{t('polls.newPoll')}</h3>
+          <button class="iconbtn" title={t('common.close')} onclick={() => (showNewDialog = false)}><Icon name="close" size={18} /></button>
         </div>
-        <input type="text" placeholder="Poll title (e.g. Friday Night)" bind:value={newTitle} maxlength="100" />
-        <label><input type="checkbox" checked disabled /> Allow movies (always)</label>
-        <label><input type="checkbox" bind:checked={newEpisodes} /> Allow TV episodes</label>
-        <label><input type="checkbox" bind:checked={newSeries} /> Allow TV series</label>
+        <input type="text" placeholder={t('polls.titlePlaceholder')} bind:value={newTitle} maxlength="100" />
+        <label><input type="checkbox" checked disabled /> {t('polls.allowMovies')}</label>
+        <label><input type="checkbox" bind:checked={newEpisodes} /> {t('polls.allowEpisodes')}</label>
+        <label><input type="checkbox" bind:checked={newSeries} /> {t('polls.allowSeries')}</label>
         <div class="actions">
-          <button onclick={() => (showNewDialog = false)}>Cancel</button>
+          <button onclick={() => (showNewDialog = false)}>{t('common.cancel')}</button>
           <button class="primary" onclick={createPoll} disabled={creating || !newTitle.trim()}>
-            {creating ? 'Creating…' : 'Create'}
+            {creating ? t('polls.creating') : t('polls.create')}
           </button>
         </div>
       </div>
@@ -96,34 +97,34 @@
   {/if}
 
   {#if polls === null}
-    <p class="dim">Loading…</p>
+    <p class="dim">{t('common.loading')}</p>
   {:else}
     {#if openPolls.length > 0}
-      <h2 class="section">Active</h2>
+      <h2 class="section">{t('polls.active')}</h2>
       {#each openPolls as poll (poll.Id)}
         <a class="card pollcard" href={'#/poll/' + poll.Id}>
           <div class="row1">
             <div class="title">{poll.Title}</div>
             <span class="chip open">
-              <Icon name="how_to_vote" size={12} /> open
+              <Icon name="how_to_vote" size={12} /> {t('status.open')}
             </span>
           </div>
           <div class="meta dim">
-            <span><Icon name="add" size={13} /> {poll.SuggestionCount} suggestion{poll.SuggestionCount === 1 ? '' : 's'}</span>
-            <span><Icon name="group" size={13} /> {poll.VoterCount} voted</span>
-            <span>by {poll.CreatedByName} · {fmtDate(poll.CreatedAt)}</span>
+            <span><Icon name="add" size={13} /> {t('polls.suggestions', { count: poll.SuggestionCount })}</span>
+            <span><Icon name="group" size={13} /> {t('polls.voted', { count: poll.VoterCount })}</span>
+            <span>{t('polls.by', { name: poll.CreatedByName, date: fmtDate(poll.CreatedAt) })}</span>
           </div>
-          <div class="go">Open poll <Icon name="chevron_right" size={16} /></div>
+          <div class="go">{t('polls.openPoll')} <Icon name="chevron_right" size={16} /></div>
         </a>
       {/each}
     {/if}
 
     {#if closedPolls.length > 0}
       <div class="pastheader">
-        <h2 class="section">Past</h2>
+        <h2 class="section">{t('polls.past')}</h2>
         {#if isAdmin}
           <button class="warning" onclick={deleteClosedPolls}>
-            <Icon name="delete" size={15} /> Delete all closed
+            <Icon name="delete" size={15} /> {t('polls.deleteAllClosed')}
           </button>
         {/if}
       </div>
@@ -132,14 +133,14 @@
           <div class="row1">
             <div class="title">{poll.Title}</div>
             <span class="chip">
-              <Icon name="lock" size={12} /> closed
+              <Icon name="lock" size={12} /> {t('status.closed')}
             </span>
           </div>
           <div class="meta dim">
-            <span>closed {poll.ClosedAt ? fmtDate(poll.ClosedAt) : ''}</span>
-            <span>by {poll.CreatedByName}</span>
+            <span>{t('polls.closedOn', { date: poll.ClosedAt ? fmtDate(poll.ClosedAt) : '' })}</span>
+            <span>{t('board.by', { name: poll.CreatedByName })}</span>
           </div>
-          <div class="go"><Icon name="trophy" size={15} /> Results <Icon name="chevron_right" size={16} /></div>
+          <div class="go"><Icon name="trophy" size={15} /> {t('polls.results')} <Icon name="chevron_right" size={16} /></div>
         </a>
       {/each}
     {/if}
@@ -147,7 +148,7 @@
     {#if polls.length === 0}
       <div class="empty">
         <Icon name="how_to_vote" size={40} />
-        <p class="dim">No polls yet. Create the first one!</p>
+        <p class="dim">{t('polls.empty')}</p>
       </div>
     {/if}
   {/if}

@@ -223,6 +223,113 @@ try {
   else fail('Kill Bill not ranked first in standings');
   await shot(page, 'c5-final-state');
 
+  // ---------- Phase E: i18n ----------
+  const me = await api('/Users/Me');
+  const uid = me.json?.Id;
+
+  step('E1. SPA in Ukrainian (user language = uk)');
+  if (!uid) {
+    fail('could not resolve user id for i18n tests');
+  } else {
+    // The page is already inside the SPA; a hash-only goto would not reload
+    // the document, so force a full reload to re-run language resolution.
+    await page.evaluate((id) => localStorage.setItem(id + '-language', 'uk'), uid);
+    await page.reload({ waitUntil: 'networkidle' });
+    await page.waitForTimeout(1500);
+    let bodyTxt = await page.evaluate(() => document.body.innerText);
+    let htmlLang = await page.evaluate(() => document.documentElement.lang);
+    if (htmlLang === 'uk') ok('<html lang="uk">'); else fail(`expected <html lang="uk">, got "${htmlLang}"`);
+    if (bodyTxt.includes('Мій список перегляду')) ok('UK room: "Мій список перегляду"'); else fail('UK room: "Мій список перегляду" missing');
+    if (bodyTxt.includes('Рейтинг') && bodyTxt.includes('наживо')) ok('UK room: "Рейтинг … наживо"'); else fail('UK room: standings label missing');
+    let overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    if (overflow <= 0) ok('UK layout: no horizontal overflow (poll room)'); else fail(`UK layout: horizontal overflow ${overflow}px (poll room)`);
+    await shot(page, 'e1-uk-room');
+
+    await page.goto(BASE + '/JellyPoll/Web/#/polls');
+    await page.waitForTimeout(1500);
+    bodyTxt = await page.evaluate(() => document.body.innerText);
+    if (bodyTxt.includes('Нове опитування')) ok('UK: "Нове опитування" button'); else fail('UK: "Нове опитування" missing');
+    if (bodyTxt.includes('3 пропозиції')) ok('UK plural (few): "3 пропозиції"'); else fail('UK plural (few): "3 пропозиції" missing');
+    if (bodyTxt.includes('проголосував 1')) ok('UK plural (one): "проголосував 1"'); else fail('UK plural (one): "проголосував 1" missing');
+    overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    if (overflow <= 0) ok('UK layout: no horizontal overflow (polls list)'); else fail(`UK layout: horizontal overflow ${overflow}px (polls list)`);
+  }
+
+  step('E2. SPA falls back to English (unknown language de)');
+  if (uid) {
+    await page.evaluate((id) => localStorage.setItem(id + '-language', 'de'), uid);
+    await page.reload({ waitUntil: 'networkidle' });
+    await page.waitForTimeout(1500);
+    const htmlLang = await page.evaluate(() => document.documentElement.lang);
+    const bodyTxt = await page.evaluate(() => document.body.innerText);
+    if (htmlLang === 'en') ok('<html lang="en"> (de -> en fallback)'); else fail(`expected <html lang="en">, got "${htmlLang}"`);
+    if (bodyTxt.includes('New poll')) ok('EN: "New poll" button'); else fail('EN: "New poll" missing');
+    if (bodyTxt.includes('3 suggestions')) ok('EN plural: "3 suggestions"'); else fail('EN plural: "3 suggestions" missing');
+    await page.evaluate((id) => localStorage.removeItem(id + '-language'), uid);
+  }
+
+  step('E3. Nav entries injected under a Ukrainian Jellyfin UI (nav-inject fix)');
+  // JF 12's web client follows the browser language when the user has no
+  // explicit choice, so a uk-UA context yields a fully Ukrainian JF UI.
+  const creds = await page.evaluate(() => localStorage.getItem('jellyfin_credentials'));
+  if (!creds) {
+    fail('no jellyfin_credentials to seed the Ukrainian context');
+  } else {
+    const ukCtx = await browser.newContext({ locale: 'uk-UA' });
+    await ukCtx.addInitScript((c) => localStorage.setItem('jellyfin_credentials', c), creds);
+    const ukPage = await ukCtx.newPage({ viewport: { width: 1440, height: 900 } });
+    await ukPage.goto(BASE + '/web/', { waitUntil: 'domcontentloaded', timeout: 60000 });
+    await ukPage.waitForTimeout(8000);
+    const drawerTexts = await ukPage.evaluate(() => Array.from(document.querySelectorAll('.navMenuOption')).map((e) => (e.textContent || '').trim()).filter(Boolean));
+    const jfIsUk = drawerTexts.some((t) => /Налаштування|Головна|Вийти/.test(t));
+    if (jfIsUk) ok(`JF UI rendered in Ukrainian (${drawerTexts.slice(0, 4).join(', ')})`);
+    else fail(`JF UI did not switch to Ukrainian: ${drawerTexts.slice(0, 6).join(' | ')}`);
+    if ((await ukPage.locator('#jellypoll-drawer-item').count()) > 0) ok('drawer entry injected under UK JF UI (language-independent anchor)');
+    else fail('drawer entry missing under Ukrainian JF UI');
+    if ((await ukPage.locator('#jellypoll-avatar-item').count()) > 0) ok('avatar entry injected under UK JF UI');
+    else fail('avatar entry missing under Ukrainian JF UI');
+    await shot(ukPage, 'e3-uk-jf-nav');
+    await ukCtx.close();
+  }
+
+  // ---------- Phase F: admin language override via the dashboard config page ----------
+  const PLUGIN_ID = '3734440f-4b20-4c3a-86a3-d931b45b7248';
+  async function displayLang() {
+    const r = await api(`/Plugins/${PLUGIN_ID}/Configuration`, 'GET');
+    return r.json?.DisplayLanguage ?? '';
+  }
+
+  step('F1. Config page renders in the real JF12 dashboard (drawer "Jelly Polls")');
+  // The dashboard route is the real user flow; the standalone
+  // /web/ConfigurationPage URL has no web-client globals (ApiClient/Dashboard).
+  await page.goto(BASE + '/web/#/configurationpage?name=jellypoll', { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('#jellypollConfigForm', { timeout: 30000 });
+  await page.waitForTimeout(2000);
+  const cfgForm = await page.evaluate(() => !!document.querySelector('#jellypollConfigForm'));
+  const cfgSel = await page.evaluate(() => !!document.querySelector('#selLanguage'));
+  if (cfgForm && cfgSel) ok('config form + language dropdown present');
+  else { fail(`config page incomplete (form=${cfgForm}, select=${cfgSel})`); await shot(page, 'f1-config-missing'); }
+
+  step('F2. Save Ukrainian override -> persists + page re-localizes to UK');
+  await page.selectOption('#selLanguage', 'uk');
+  await page.click('#jellypollConfigForm button[type="submit"]');
+  await page.waitForTimeout(3000);
+  const dlUk = await displayLang();
+  if (dlUk === 'uk') ok('DisplayLanguage persisted = "uk"'); else fail(`DisplayLanguage = ${JSON.stringify(dlUk)}`);
+  const cfgUk = await page.evaluate(() => document.body.innerText);
+  const cfgLang = await page.evaluate(() => document.documentElement.lang);
+  if (cfgLang === 'uk' && cfgUk.includes('Мова інтерфейсу') && cfgUk.includes('Зберегти')) ok('config page re-localized to Ukrainian');
+  else { fail(`config page did not re-localize (lang=${cfgLang})`); await shot(page, 'f2-config-uk'); }
+
+  step('F3. Reset override to Auto -> persists + re-localizes to EN');
+  await page.selectOption('#selLanguage', '');
+  await page.click('#jellypollConfigForm button[type="submit"]');
+  await page.waitForTimeout(3000);
+  const dlReset = await displayLang();
+  if (dlReset === '') ok('DisplayLanguage reset to auto ("")'); else fail(`DisplayLanguage = ${JSON.stringify(dlReset)}`);
+  const cfgEn = await page.evaluate(() => document.body.innerText);
+  if (cfgEn.includes('Interface language')) ok('config page re-localized back to English'); else fail('config page did not re-localize back to EN');
+
   // ---------- Phase D: cleanup ----------
   step('D1. Cleanup (delete E2E poll + collection via API)');
   // Leave the poll room first so it stops requesting collection posters.

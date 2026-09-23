@@ -1,5 +1,6 @@
 <script lang="ts">
   import { jellyfin, jellypoll } from '../lib/api';
+  import { t, tType, errorMessage } from '../lib/i18n.svelte';
   import type { JellyfinSearchItem, PollMeta } from '../lib/types';
   import Poster from './Poster.svelte';
   import Icon from './Icon.svelte';
@@ -39,7 +40,7 @@
       const res = await jellypoll.listCollections(searchTerm.trim() || undefined);
       collections = res.Items;
     } catch (e) {
-      onAdded(e instanceof Error ? e.message : String(e), true);
+      onAdded(errorMessage(e), true);
     } finally {
       loadingCollections = false;
     }
@@ -71,20 +72,22 @@
     try {
       const res = await jellypoll.addSuggestion(poll.Id, item.Id);
       if (res.Suggestion) {
-        onAdded(`"${item.Name}" added to the poll.`, false, [res.Suggestion.Id]);
+        onAdded(t('picker.added', { name: item.Name }), false, [res.Suggestion.Id]);
       } else {
         // Collection (BoxSet): expanded into per-movie suggestions.
         const added = res.Suggestions ?? [];
-        const parts = [`"${item.Name}" — ${added.length} movie${added.length === 1 ? '' : 's'} added`];
-        if ((res.SkippedExisting ?? 0) > 0) parts.push(`${res.SkippedExisting} already in poll`);
-        if ((res.SkippedOverLimit ?? 0) > 0) parts.push(`${res.SkippedOverLimit} skipped (limit reached)`);
+        const parts = [t('picker.collectionAdded', { name: item.Name, count: added.length })];
+        const skippedExisting = res.SkippedExisting ?? 0;
+        const skippedOverLimit = res.SkippedOverLimit ?? 0;
+        if (skippedExisting > 0) parts.push(t('picker.alreadyInPoll', { count: skippedExisting }));
+        if (skippedOverLimit > 0) parts.push(t('picker.skippedOverLimit', { count: skippedOverLimit }));
         onAdded(parts.join(' · '), false, added.map((s) => s.Id));
       }
 
       // Drop the card from results — resuggesting it yields "already in poll".
       results = results.filter((r) => r.Id !== item.Id);
     } catch (e) {
-      onAdded(e instanceof Error ? e.message : String(e), true);
+      onAdded(errorMessage(e), true);
     } finally {
       busyItemId = null;
     }
@@ -92,12 +95,12 @@
 </script>
 
 <div class="card picker">
-  <h3 class="sechead"><Icon name="movie" size={18} /> Suggest a title</h3>
+  <h3 class="sechead"><Icon name="movie" size={18} /> {t('picker.title')}</h3>
   <div class="searchwrap">
     <Icon name="search" size={17} class="searchicon" />
     <input
       type="search"
-      placeholder="Search the library…"
+      placeholder={t('picker.searchPlaceholder')}
       bind:value={searchTerm}
       oninput={onInput}
     />
@@ -106,15 +109,15 @@
 
   <button class="link" type="button" onclick={toggleCollections}>
     <Icon name="stacks" size={16} />
-    {showCollections ? 'Collections' : 'Browse collections'}
+    {showCollections ? t('picker.collections') : t('picker.browseCollections')}
     <Icon name={showCollections ? 'keyboard_arrow_up' : 'keyboard_arrow_down'} size={16} />
   </button>
 
   {#if showCollections}
     {#if loadingCollections}
-      <p class="dim small"><Icon name="search" size={13} /> Loading collections…</p>
+      <p class="dim small"><Icon name="search" size={13} /> {t('picker.loadingCollections')}</p>
     {:else if collections.length === 0}
-      <p class="dim small">No collections in your libraries.</p>
+      <p class="dim small">{t('picker.noCollections')}</p>
     {:else}
       <div class="list">
         {#each collections as item (item.Id)}
@@ -124,7 +127,7 @@
               <span class="name">{item.Name}</span>
               <span class="sub dim">
                 <Icon name="stacks" size={11} />
-                Collection · {item.MovieCount} movie{item.MovieCount === 1 ? '' : 's'}
+                {t('picker.collectionMovies', { count: item.MovieCount })}
               </span>
             </div>
             <span class="addicon"><Icon name="add" size={18} /></span>
@@ -136,7 +139,7 @@
   {/if}
 
   {#if searching}
-    <p class="dim small"><Icon name="search" size={13} /> Searching…</p>
+    <p class="dim small"><Icon name="search" size={13} /> {t('picker.searching')}</p>
   {:else if results.length > 0}
     <div class="list">
       {#each results as item (item.Id)}
@@ -144,10 +147,10 @@
           <Poster itemId={item.Id} name={item.Name} size={32} />
           <div class="info">
             <span class="name">{item.Name}</span>
-            <span class="sub dim">
-              <Icon name={item.Type === 'BoxSet' ? 'stacks' : 'movie'} size={11} />
-              {item.Type === 'BoxSet' ? 'Collection' : item.Type}{item.ProductionYear ? ' · ' + item.ProductionYear : ''}
-            </span>
+              <span class="sub dim">
+                <Icon name={item.Type === 'BoxSet' ? 'stacks' : 'movie'} size={11} />
+                {tType(item.Type)}{item.ProductionYear ? ' · ' + item.ProductionYear : ''}
+              </span>
           </div>
           <span class="addicon"><Icon name="add" size={18} /></span>
           {#if busyItemId === item.Id}<span class="busy"><span class="busspin"></span></span>{/if}
@@ -155,9 +158,9 @@
       {/each}
     </div>
   {:else if searchTerm.trim()}
-    <p class="dim small"><Icon name="search" size={13} /> No results.</p>
+    <p class="dim small"><Icon name="search" size={13} /> {t('picker.noResults')}</p>
   {:else}
-    <p class="dim small">Search your library and tap a title to add it to this poll.</p>
+    <p class="dim small">{t('picker.hint')}</p>
   {/if}
 </div>
 

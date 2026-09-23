@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node ../scripts/check-i18n-parity.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },

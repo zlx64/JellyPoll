@@ -1,5 +1,6 @@
 <script lang="ts">
   import { login } from '../lib/auth.svelte';
+  import { t, errorMessage } from '../lib/i18n.svelte';
   import Icon from '../components/Icon.svelte';
 
   let username = $state('');
@@ -13,7 +14,7 @@
     try {
       await login(username, password);
     } catch (e) {
-      error = e instanceof Error ? e.message : String(e);
+      error = errorMessage(e);
     } finally {
       busy = false;
     }
@@ -29,13 +30,13 @@
       <Icon name="trophy" size={18} class="silver" />
       <Icon name="trophy" size={16} class="bronze" />
     </div>
-    <p class="dim">Sign in with your Jellyfin account</p>
+    <p class="dim">{t('login.subtitle')}</p>
     {#if error}<div class="error-box">{error}</div>{/if}
     <form onsubmit={(e) => { e.preventDefault(); submit(); }}>
-      <input type="text" placeholder="Username" bind:value={username} autocomplete="username" />
-      <input type="password" placeholder="Password" bind:value={password} autocomplete="current-password" />
+      <input type="text" placeholder={t('login.usernamePlaceholder')} bind:value={username} autocomplete="username" />
+      <input type="password" placeholder={t('login.passwordPlaceholder')} bind:value={password} autocomplete="current-password" />
       <button class="primary" type="submit" disabled={busy || !username || !password}>
-        {busy ? 'Signing in…' : 'Sign in'}
+        {busy ? t('login.signingIn') : t('login.signIn')}
       </button>
     </form>
   </div>

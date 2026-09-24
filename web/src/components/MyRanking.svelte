@@ -10,13 +10,17 @@
     myBallot,
     saved,
     onReorder,
-    onRemove
+    onRemove,
+    shareRanking = false,
+    onToggleShare
   }: {
     detail: PollDetail;
     myBallot: string[];
     saved: boolean;
     onReorder: (newOrder: string[]) => void;
     onRemove: (suggestionId: string) => void;
+    shareRanking?: boolean;
+    onToggleShare?: () => void;
   } = $props();
 
   let dragIndex = $state<number | null>(null);
@@ -56,6 +60,12 @@
     {#if saved}<Icon name="check" size={14} />{/if}
     {saved ? t('ranking.saved') : t('ranking.autoSave')}
   </p>
+
+  <label class="share">
+    <input type="checkbox" checked={shareRanking} onchange={onToggleShare} />
+    <span class="sharelabel">{t('ranking.shareTitle')}</span>
+    <span class="shareinfo" title={t('ranking.shareHint')}><Icon name="info" size={14} /></span>
+  </label>
 
   {#if myBallot.length === 0}
     <p class="empty dim"><Icon name="format_list_numbered" size={16} /> {t('ranking.empty')}</p>
@@ -102,6 +112,22 @@
     margin: 0.15rem 0 0.6rem; font-size: 0.78rem; color: var(--jp-text-dim);
   }
   .savehint.done { color: var(--jp-success); }
+  .share {
+    display: flex; align-items: center; gap: 0.45rem;
+    margin: 0 0 0.7rem; padding: 0.45rem 0.55rem;
+    font-size: 0.8rem; color: var(--jp-text-dim);
+    background: var(--jp-surface-2); border: 1px solid var(--jp-border);
+    border-radius: var(--jp-radius-sm); cursor: pointer;
+    transition: border-color 0.12s ease, color 0.12s ease;
+  }
+  .share:hover { border-color: var(--jp-accent); color: var(--jp-text); }
+  .share input[type='checkbox'] {
+    width: 1rem; height: 1rem; margin: 0; flex-shrink: 0;
+    accent-color: var(--jp-accent); cursor: pointer;
+  }
+  .sharelabel { flex: 1; min-width: 0; }
+  .shareinfo { display: inline-flex; color: var(--jp-text-dim); cursor: help; }
+  .shareinfo:hover { color: var(--jp-accent); }
   .empty {
     display: flex; align-items: flex-start; gap: 0.4rem;
     font-size: 0.82rem; margin: 0.2rem 0 0; line-height: 1.35;

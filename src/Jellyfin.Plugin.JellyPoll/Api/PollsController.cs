@@ -329,6 +329,31 @@ public sealed class PollsController : JellyPollControllerBase
         }
     }
 
+    // ---------- 4.10a ranking breakdown (standings tooltip) ----------
+
+    /// <summary>
+    /// Per-suggestion voter breakdown for the standings tooltip. Mutual opt-in:
+    /// empty when the caller has sharing off; only lists voters who have sharing on.
+    /// </summary>
+    [HttpGet("Polls/{id:guid}/RankingBreakdown")]
+    public async Task<ActionResult<object>> RankingBreakdown(Guid id)
+    {
+        var user = await ResolveUserAsync().ConfigureAwait(false);
+        if (user is null)
+        {
+            return UnauthorizedError();
+        }
+
+        try
+        {
+            return Ok(_polls.GetRankingBreakdown(user, id));
+        }
+        catch (PollNotFoundException)
+        {
+            return NotFoundError();
+        }
+    }
+
     // ---------- 4.11 state poller ----------
 
     [HttpGet("Polls/{id:guid}/State")]

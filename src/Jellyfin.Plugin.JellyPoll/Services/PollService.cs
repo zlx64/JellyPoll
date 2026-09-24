@@ -424,4 +424,68 @@ public sealed class PollService
         Api.StandingEntryDto? Medal(int rank) => standings.FirstOrDefault(s => s.Rank == rank && !s.ItemMissing);
         return new Api.ResultsDto(standings, Medal(1), Medal(2), Medal(3));
     }
+
+    // ---------- user preferences + ranking breakdown ----------
+
+    public bool GetShareRanking(Guid userId) => _repo.GetShareRanking(userId);
+
+    public void SetShareRanking(Guid userId, bool value) => _repo.SetShareRanking(userId, value);
+
+    /// <summary>
+    /// Per-suggestion voter breakdown for the standings tooltip. Mutual opt-in:
+    /// returns empty when the viewer has sharing off, and only lists voters who
+    /// have sharing on. Place/points mirror the Borda score (N - place).
+    /// </summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<Api.VoterBreakdownDto>> GetRankingBreakdown(User viewer, Guid pollId)
+    {
+        GetPoll(pollId); // throws PollNotFoundException
+
+        if (!_repo.GetShareRanking(viewer.Id))
+        {
+            return new Dictionary<string, IReadOnlyList<Api.VoterBreakdownDto>>();
+        }
+
+        var snapshot = _repo.GetSnapshot(pollId);
+        var eligible = snapshot.Suggestions.Where(s => _library.ResolveItem(s.ItemId) is not null).ToList();
+        var n = eligible.Count;
+        var eligibleIds = eligible.Select(s => s.Id).ToHashSet();
+        var sharing = _repo.GetShareRankingUserIds();
+
+        var breakdown = new Dictionary<string, List<Api.VoterBreakdownDto>>();
+        foreach (var ballot in snapshot.Ballots)
+        {
+            if (!sharing.Contains(ballot.UserId))
+            {
+                continue;
+            }
+
+            var name = _userNames.GetName(ballot.UserId);
+            var place = 0;
+            var seen = new HashSet<Guid>();
+            foreach (var sid in ballot.OrderedSuggestionIds)
+            {
+                if (!eligibleIds.Contains(sid) || !seen.Add(sid))
+                {
+                    continue;
+                }
+
+                place++;
+                var key = sid.ToString();
+                if (!breakdown.TryGetValue(key, out var list))
+                {
+                    breakdown[key] = list = new List<Api.VoterBreakdownDto>();
+                }
+
+                list.Add(new Api.VoterBreakdownDto(name, place, (long)(n - place)));
+            }
+        }
+
+        var result = new Dictionary<string, IReadOnlyList<Api.VoterBreakdownDto>>(breakdown.Count);
+        foreach (var kv in breakdown)
+        {
+            result[kv.Key] = kv.Value.OrderBy(v => v.Position).ToList();
+        }
+
+        return result;
+    }
 }

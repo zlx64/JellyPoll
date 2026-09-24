@@ -54,6 +54,12 @@ public sealed class Db
             conn.Execute(SchemaV1);
             conn.Execute("PRAGMA user_version = 1;");
         }
+
+        if (version < 2)
+        {
+            conn.Execute(SchemaV2);
+            conn.Execute("PRAGMA user_version = 2;");
+        }
     }
 
     private const string SchemaV1 = @"
@@ -100,5 +106,16 @@ CREATE TABLE IF NOT EXISTS ballot_entries (
 CREATE INDEX IF NOT EXISTS idx_suggestions_poll      ON suggestions (poll_id);
 CREATE INDEX IF NOT EXISTS idx_ballots_poll          ON ballots (poll_id);
 CREATE INDEX IF NOT EXISTS idx_ballot_entries_ballot ON ballot_entries (ballot_id);
+";
+
+    /// <summary>
+    /// v2: per-user preferences. share_ranking = the user consents to having their
+    /// watch order shown in the standings vote breakdown (mutual opt-in).
+    /// </summary>
+    private const string SchemaV2 = @"
+CREATE TABLE IF NOT EXISTS user_settings (
+    user_id       TEXT PRIMARY KEY,
+    share_ranking INTEGER NOT NULL DEFAULT 0
+);
 ";
 }

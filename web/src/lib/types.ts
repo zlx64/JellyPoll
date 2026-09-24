@@ -70,6 +70,16 @@ export interface Results {
   Bronze: StandingEntry | null;
 }
 
+/** One voter's contribution to a suggestion's points (standings tooltip). */
+export interface VoterBreakdown {
+  Name: string;
+  Position: number;
+  Points: number;
+}
+
+/** Per-suggestion voter breakdown, keyed by suggestion id. Empty when sharing is off. */
+export type RankingBreakdown = Record<string, VoterBreakdown[]>;
+
 export interface JellyfinSearchItem {
   Id: string;
   Name: string;

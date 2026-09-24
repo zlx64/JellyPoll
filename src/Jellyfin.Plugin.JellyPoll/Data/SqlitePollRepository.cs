@@ -481,4 +481,40 @@ public sealed class SqlitePollRepository : IPollRepository
             _writeLock.Release();
         }
     }
+
+    // ---------- user preferences ----------
+
+    public bool GetShareRanking(Guid userId)
+    {
+        using var conn = _db.Open();
+        var v = conn.ExecuteScalar<long?>(
+            "SELECT share_ranking FROM user_settings WHERE user_id = @u;",
+            new { u = userId.ToString() });
+        return v is not null && v == 1;
+    }
+
+    public void SetShareRanking(Guid userId, bool value)
+    {
+        _writeLock.Wait();
+        try
+        {
+            using var conn = _db.Open();
+            conn.Execute(
+                "INSERT INTO user_settings (user_id, share_ranking) VALUES (@u, @v) " +
+                "ON CONFLICT (user_id) DO UPDATE SET share_ranking = @v;",
+                new { u = userId.ToString(), v = value ? 1 : 0 });
+        }
+        finally
+        {
+            _writeLock.Release();
+        }
+    }
+
+    public IReadOnlySet<Guid> GetShareRankingUserIds()
+    {
+        using var conn = _db.Open();
+        var rows = conn.Query<string>(
+            "SELECT user_id FROM user_settings WHERE share_ranking = 1;");
+        return rows.Select(Guid.Parse).ToHashSet();
+    }
 }

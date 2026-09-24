@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { jellypoll, ApiError } from '../lib/api';
   import { t, errorMessage } from '../lib/i18n.svelte';
-  import type { PollDetail } from '../lib/types';
+  import type { PollDetail, RankingBreakdown } from '../lib/types';
   import SuggestPicker from '../components/SuggestPicker.svelte';
   import SuggestionBoard from '../components/SuggestionBoard.svelte';
   import MyRanking from '../components/MyRanking.svelte';
@@ -17,6 +17,8 @@
   let toast = $state('');
   let toastIsError = $state(false);
   let saved = $state(false);
+  let shareRanking = $state(false);
+  let breakdown = $state<RankingBreakdown>({});
   let saveTimer: ReturnType<typeof setTimeout> | undefined;
   let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -37,11 +39,22 @@
       error = '';
     } catch (e) {
       error = errorMessage(e);
+      return;
+    }
+    // The vote breakdown is only available when the viewer opted in (mutual opt-in).
+    if (shareRanking) {
+      try {
+        breakdown = await jellypoll.rankingBreakdown(pollId);
+      } catch {
+        breakdown = {};
+      }
+    } else {
+      breakdown = {};
     }
   }
 
   onMount(() => {
-    load();
+    init();
     const timer = setInterval(pollState, 4000);
     const visibility = () => {
       if (!document.hidden) pollState();
@@ -52,6 +65,31 @@
       document.removeEventListener('visibilitychange', visibility);
     };
   });
+
+  async function init() {
+    try {
+      shareRanking = (await jellypoll.getPreferences()).shareRanking;
+    } catch {
+      /* default off */
+    }
+    await load();
+  }
+
+  async function toggleShareRanking() {
+    const next = !shareRanking;
+    shareRanking = next; // optimistic
+    try {
+      await jellypoll.setShareRanking(next);
+      if (next) {
+        breakdown = await jellypoll.rankingBreakdown(pollId);
+      } else {
+        breakdown = {};
+      }
+    } catch (e) {
+      shareRanking = !next; // revert
+      showToast(errorMessage(e), true);
+    }
+  }
 
   async function pollState() {
     if (document.hidden || !detail) return;
@@ -186,7 +224,7 @@
 
     {#if detail.Poll.Status === 'closed'}
       <h2 class="finalhead"><Icon name="trophy" size={22} class="goldicon" /> {t('room.finalResults')}</h2>
-      <Standings standings={detail.Standings} closed={true} />
+      <Standings standings={detail.Standings} closed={true} breakdown={breakdown} canSee={shareRanking} />
       {#if gold}
         <a class="card watchnext" href={detailLink} target="_blank" rel="noreferrer">
           <Icon name="play_arrow" size={20} class="playicon" />
@@ -201,12 +239,13 @@
           <SuggestionBoard {detail} {myBallot} onChanged={onChanged} onAddToOrder={addToOrder} />
         </div>
         <div class="col">
-          <MyRanking {detail} {myBallot} {saved} onReorder={reorder} onRemove={removeFromBallot} />
+          <MyRanking {detail} {myBallot} {saved} onReorder={reorder} onRemove={removeFromBallot}
+            shareRanking={shareRanking} onToggleShare={toggleShareRanking} />
         </div>
         <div class="col">
           <div class="card">
             <h3 class="sechead"><Icon name="trophy" size={18} /><span>{t('room.standings')} <span class="live">{t('room.live')}</span></span></h3>
-            <Standings standings={detail.Standings} />
+            <Standings standings={detail.Standings} breakdown={breakdown} canSee={shareRanking} />
           </div>
         </div>
       </div>

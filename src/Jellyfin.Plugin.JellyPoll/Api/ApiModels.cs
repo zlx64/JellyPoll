@@ -79,3 +79,9 @@ public sealed record AddSuggestionRequest(string ItemId);
 public sealed record SaveBallotRequest(IReadOnlyList<string> SuggestionIds);
 
 public sealed record MenuLinkRequest(bool Install);
+
+/// <summary>One voter's contribution to a suggestion's points (ranking breakdown).</summary>
+public sealed record VoterBreakdownDto(string Name, int Position, long Points);
+
+/// <summary>Body for PUT /JellyPoll/Preferences.</summary>
+public sealed record SetPreferencesRequest(bool ShareRanking);

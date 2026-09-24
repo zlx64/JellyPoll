@@ -223,6 +223,46 @@ try {
   else fail('Kill Bill not ranked first in standings');
   await shot(page, 'c5-final-state');
 
+  // ---------- Phase G: standings vote-breakdown (pts hover tooltip) ----------
+  step('G1. "Share my ranking" toggle present in My watch order');
+  const shareLabel = page.locator('label.share');
+  if ((await shareLabel.count()) === 1) ok('share toggle present in My watch order');
+  else { fail('share toggle missing'); await shot(page, 'g1-toggle-missing'); }
+
+  step('G2. Sharing OFF -> pts not hoverable (no tooltip)');
+  if ((await page.locator('.pts.hoverable').count()) === 0) ok('no hoverable pts while sharing is off');
+  else fail(`expected 0 hoverable pts while off, got ${await page.locator('.pts.hoverable').count()}`);
+
+  step('G3. Toggle sharing ON -> pts hoverable + tooltip on hover');
+  const shareCheckbox = shareLabel.locator('input[type="checkbox"]');
+  await shareCheckbox.click({ timeout: 10000 });
+  await page.waitForTimeout(1500);
+  if ((await page.locator('.pts.hoverable').count()) > 0) ok('pts become hoverable after enabling sharing');
+  else { fail('pts not hoverable after enabling sharing'); await shot(page, 'g3-no-hoverable'); }
+  const tip = page.locator('.tip').first();
+  await page.locator('.pts.hoverable').first().hover();
+  await page.waitForTimeout(500);
+  if (await tip.isVisible().catch(() => false)) {
+    const tipText = (await tip.innerText()).replace(/\s+/g, ' ').trim();
+    console.log(`  tooltip: "${tipText}"`);
+    if (/who voted/i.test(tipText)) ok('tooltip shows "Who voted" header');
+    else fail(`tooltip header missing: "${tipText}"`);
+    if (/admin/i.test(tipText)) ok('tooltip lists the voter (admin)');
+    else fail('tooltip does not list admin');
+    if (/\b\d+\s*pts\b/.test(tipText)) ok('tooltip shows points for the place');
+    else fail('tooltip missing points');
+    await shot(page, 'g3-tooltip');
+  } else {
+    fail('tooltip did not appear on hover of pts');
+    await shot(page, 'g3-no-tooltip');
+  }
+
+  step('G4. Toggle sharing OFF -> tooltip hidden again');
+  await shareCheckbox.click({ timeout: 10000 });
+  await page.waitForTimeout(1000);
+  if ((await page.locator('.pts.hoverable').count()) === 0) ok('pts no longer hoverable after disabling sharing');
+  else fail('pts still hoverable after disabling sharing');
+
   // ---------- Phase E: i18n ----------
   const me = await api('/Users/Me');
   const uid = me.json?.Id;

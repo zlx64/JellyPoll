@@ -109,7 +109,9 @@
     "dragTitle": "Drag to reorder",
     "moveUp": "Move up",
     "moveDown": "Move down",
-    "removeTitle": "Remove from my ranking"
+    "removeTitle": "Remove from my ranking",
+    "shareTitle": "Share my ranking",
+    "shareHint": "Visible only to people who also enable this — and you can see others' rankings only while it's on."
   },
   "standings": {
     "empty": "No votes yet.",
@@ -124,7 +126,10 @@
     "points": {
       "one": "{count} pt",
       "other": "{count} pts"
-    }
+    },
+    "breakdownTitle": "Who voted",
+    "place": "#{position}",
+    "breakdownEmpty": "No shared votes yet."
   },
   "errors": {
     "unauthenticated": "Session expired. Please sign in again.",

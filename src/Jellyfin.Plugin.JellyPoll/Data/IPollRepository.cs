@@ -48,4 +48,14 @@ public interface IPollRepository
     int GetStateVersion(Guid pollId);
 
     int RemoveSuggestions(IReadOnlyList<Guid> suggestionIds);
+
+    // ---------- user preferences ----------
+
+    /// <summary>True when the user has opted in to sharing their ranking (default false).</summary>
+    bool GetShareRanking(Guid userId);
+
+    void SetShareRanking(Guid userId, bool value);
+
+    /// <summary>All user ids that have opted in to sharing their ranking.</summary>
+    IReadOnlySet<Guid> GetShareRankingUserIds();
 }

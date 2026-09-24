@@ -3,7 +3,7 @@
 
 import { auth, authHeader, logout } from './auth.svelte';
 import { t } from './i18n.svelte';
-import type { JellyfinSearchResult, PollDetail, PollSummary, Results, Suggestion } from './types';
+import type { JellyfinSearchResult, PollDetail, PollSummary, RankingBreakdown, Results, Suggestion } from './types';
 
 export class ApiError extends Error {
   constructor(
@@ -102,6 +102,18 @@ export const jellypoll = {
     }>(`/JellyPoll/Collections${searchTerm ? `?searchTerm=${encodeURIComponent(searchTerm)}` : ''}`, { method: 'GET' }),
 
   results: (pollId: string) => request<Results>(`/JellyPoll/Polls/${pollId}/Results`, { method: 'GET' }),
+
+  /** Per-suggestion voter breakdown for the standings tooltip (mutual opt-in). */
+  rankingBreakdown: (pollId: string) =>
+    request<RankingBreakdown>(`/JellyPoll/Polls/${pollId}/RankingBreakdown`, { method: 'GET' }),
+
+  getPreferences: () => request<{ shareRanking: boolean }>('/JellyPoll/Preferences', { method: 'GET' }),
+
+  setShareRanking: (shareRanking: boolean) =>
+    request<void>('/JellyPoll/Preferences', {
+      method: 'PUT',
+      body: JSON.stringify({ shareRanking })
+    }),
 
   /** 204 when unchanged; 200 with new stateVersion when changed. */
   state: (pollId: string, version: number) =>

@@ -1,5 +1,10 @@
 :root {
-  --jp-bg: #101010;
+  --jp-bg: #0b0b14;
+  /* Aurora mesh: three soft glows (accent blue, violet, teal) over the base. */
+  --jp-bg-gradient:
+    radial-gradient(1100px 640px at 10% -14%, rgba(77, 163, 255, 0.14), transparent 65%),
+    radial-gradient(1000px 580px at 90% -18%, rgba(139, 92, 246, 0.12), transparent 63%),
+    radial-gradient(1500px 820px at 50% 132%, rgba(45, 212, 191, 0.07), transparent 68%);
   --jp-surface: #1c1c1e;
   --jp-surface-2: #2a2a2c;
   --jp-surface-3: #35353a;
@@ -21,7 +26,11 @@
 
 @media (prefers-color-scheme: light) {
   :root {
-    --jp-bg: #f4f4f6;
+    --jp-bg: #f4f4f8;
+    /* Softer aurora for light mode: blue + violet tints, no teal. */
+    --jp-bg-gradient:
+      radial-gradient(1100px 640px at 10% -14%, rgba(11, 127, 212, 0.10), transparent 65%),
+      radial-gradient(1000px 580px at 90% -18%, rgba(139, 92, 246, 0.09), transparent 63%);
     --jp-surface: #ffffff;
     --jp-surface-2: #ececf1;
     --jp-surface-3: #e0e0e8;
@@ -45,9 +54,20 @@
 body {
   margin: 0;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  background: var(--jp-bg);
+  background-color: var(--jp-bg);
   color: var(--jp-text);
   -webkit-font-smoothing: antialiased;
+}
+
+/* Fixed aurora layer behind all content. A composited fixed pseudo-element
+   (rather than background-attachment: fixed) keeps scrolling smooth. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--jp-bg-gradient);
+  pointer-events: none;
 }
 
 button {

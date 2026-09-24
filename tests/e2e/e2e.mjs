@@ -218,24 +218,15 @@ try {
   await page.waitForTimeout(2500);
   ok(`suggested ${movie3.name} via search`);
 
-  step('C3b. Re-suggesting a movie already in the poll shows a friendly notice (not an error)');
+  step('C3b. Searching a movie already in the poll hides it from the results');
   await page.fill('input[type="search"]', '');
   await page.waitForTimeout(400);
   await page.fill('input[type="search"]', movie3.name);
   await page.waitForTimeout(3000);
-  const dupCard = page.locator('.picker .row').filter({ hasText: new RegExp(escapeRegex(movie3.name), 'i') }).first();
-  await dupCard.click({ timeout: 15000 });
-  await page.waitForTimeout(1500);
-  const dupToast = page.locator('.toast').first();
-  if (await dupToast.isVisible().catch(() => false)) {
-    const dupToastText = (await dupToast.innerText()).replace(/\s+/g, ' ').trim();
-    const dupIsErr = await dupToast.evaluate((el) => el.classList.contains('err'));
-    if (!dupIsErr && /already in the poll/i.test(dupToastText)) ok(`friendly non-error notice: "${dupToastText}"`);
-    else { fail(`expected non-error "already in the poll" notice, got err=${dupIsErr} text="${dupToastText}"`); await shot(page, 'c3b-toast'); }
-  } else {
-    fail('no toast shown when re-suggesting an existing movie');
-    await shot(page, 'c3b-no-toast');
-  }
+  const dupRows = page.locator('.picker .list .row').filter({ hasText: new RegExp(escapeRegex(movie3.name), 'i') });
+  const dupCount = await dupRows.count();
+  if (dupCount === 0) ok('already-suggested movie is hidden from search results');
+  else { fail(`expected ${movie3.name} hidden from search, but found ${dupCount} row(s)`); await shot(page, 'c3b-not-hidden'); }
 
   step('C3c. Movie search excludes collections (they live only in "Browse collections")');
   await page.fill('input[type="search"]', '');

@@ -189,6 +189,12 @@
     gold ? `${location.origin}/web/index.html#!/details?id=${gold.ItemId}` : ''
   );
   const homeUrl = `${location.origin}/web/index.html#!/home`;
+  // Item ids already suggested in this poll — used to hide them from search.
+  // Normalized (hyphens stripped, lowercased) because /Items returns hyphen-less
+  // ids while stored suggestion ItemIds are hyphenated GUIDs.
+  const existingItemIds = $derived(
+    new Set((detail?.Suggestions ?? []).map((s) => s.ItemId.replace(/-/g, '').toLowerCase()))
+  );
 </script>
 
 {#if detail}
@@ -235,7 +241,7 @@
     {:else}
       <div class="columns">
         <div class="col">
-          <SuggestPicker poll={detail.Poll} onAdded={onAdded} />
+          <SuggestPicker poll={detail.Poll} existingItemIds={existingItemIds} onAdded={onAdded} />
           <SuggestionBoard {detail} {myBallot} onChanged={onChanged} onAddToOrder={addToOrder} />
         </div>
         <div class="col">

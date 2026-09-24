@@ -5,12 +5,26 @@
   import Poster from './Poster.svelte';
   import Icon from './Icon.svelte';
 
-  let { poll, onAdded }: { poll: PollMeta; onAdded: (msg: string, isError: boolean, suggestionIds?: string[]) => void } = $props();
+  let {
+    poll,
+    existingItemIds,
+    onAdded
+  }: {
+    poll: PollMeta;
+    existingItemIds: Set<string>;
+    onAdded: (msg: string, isError: boolean, suggestionIds?: string[]) => void;
+  } = $props();
 
   let searchTerm = $state('');
-  let results = $state<JellyfinSearchItem[]>([]);
+  let rawResults = $state<JellyfinSearchItem[]>([]);
   let searching = $state(false);
   let busyItemId = $state<string | null>(null);
+
+  // Hide movies/series/episodes that are already in the poll (matched by item id,
+  // normalized the same way as existingItemIds).
+  const results = $derived(
+    rawResults.filter((r) => !existingItemIds.has(r.Id.replace(/-/g, '').toLowerCase()))
+  );
 
   // Collections (BoxSet) are intentionally excluded from the movie search —
   // they are browsed only through the "Browse collections" menu below.
@@ -50,7 +64,7 @@
   function onInput() {
     clearTimeout(debounceTimer);
     if (!searchTerm.trim()) {
-      results = [];
+      rawResults = [];
       return;
     }
     debounceTimer = setTimeout(search, 300);
@@ -60,7 +74,7 @@
     searching = true;
     try {
       const res = await jellyfin.searchItems(searchTerm.trim(), includeTypes, 10);
-      results = res.Items;
+      rawResults = res.Items;
     } finally {
       searching = false;
     }
@@ -85,8 +99,8 @@
         onAdded(parts.join(' · '), false, added.map((s) => s.Id));
       }
 
-      // Drop the card from results — resuggesting it yields "already in poll".
-      results = results.filter((r) => r.Id !== item.Id);
+      // Drop the card from results — it's now in the poll and gets filtered out.
+      rawResults = rawResults.filter((r) => r.Id !== item.Id);
     } catch (e) {
       if ((e as { code?: string }).code === 'duplicate_suggestion') {
         // Already in the poll — show a friendly notice, not an error.

@@ -1,0 +1,16 @@
+{
+  "category": "General",
+  "changelog": "See release notes at https://github.com/zlx64/JellyPoll/releases",
+  "description": "Group polls to choose what to watch together: suggest, rank, and crown the top 3.",
+  "guid": "3734440f-4b20-4c3a-86a3-d931b45b7248",
+  "name": "Jelly Poll",
+  "overview": "Group movie polling with ranked ballots and a gold/silver/bronze podium.",
+  "owner": "zlx64",
+  "targetAbi": "12.1.0.0",
+  "timestamp": "2026-09-22T23:30:00.0000000Z",
+  "version": "1.0.1.0",
+  "status": "Active",
+  "autoUpdate": true,
+  "imagePath": "logo.png",
+  "assemblies": []
+}

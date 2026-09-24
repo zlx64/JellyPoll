@@ -1,7 +1,27 @@
 import { chromium } from 'playwright';
+import { readFileSync, existsSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const BASE = 'http://localhost:8096';
-let TOKEN = process.env.E2E_TOKEN || '';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+function loadEnv(file) {
+  const out = {};
+  if (!existsSync(file)) return out;
+  for (const line of readFileSync(file, 'utf8').split(/\r?\n/)) {
+    const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
+    if (!m) continue;
+    let v = m[2].trim();
+    if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) v = v.slice(1, -1);
+    out[m[1]] = v;
+  }
+  return out;
+}
+// process.env (set by run-e2e.mjs) wins; .env is the standalone fallback.
+const ENV = { ...loadEnv(path.join(__dirname, '.env')), ...process.env };
+const BASE = ENV.E2E_BASE || `http://localhost:${ENV.JELLYFIN_HOST_PORT || 8096}`;
+const ADMIN_USER = ENV.E2E_ADMIN_USER || ENV.JELLYFIN_ADMIN_USER || 'admin';
+const ADMIN_PASSWORD = ENV.E2E_ADMIN_PASSWORD || ENV.JELLYFIN_ADMIN_PASSWORD || 'E2eAdmin123!';
+let TOKEN = ENV.E2E_TOKEN || '';
 
 async function ensureToken() {
   if (TOKEN) {
@@ -15,7 +35,7 @@ async function ensureToken() {
   const res = await fetch(BASE + '/Users/AuthenticateByName', {
     method: 'POST',
     headers: authHeaders,
-    body: JSON.stringify({ Username: 'admin', Pw: 'E2eAdmin123!' }),
+    body: JSON.stringify({ Username: ADMIN_USER, Pw: ADMIN_PASSWORD }),
   });
   if (res.status !== 200) throw new Error(`E2E auth failed: ${res.status} ${await res.text()}`);
   const user = await res.json();
@@ -44,11 +64,29 @@ async function api(path, method = 'GET', body) {
   return { status: res.status, json, text };
 }
 
+// Discover 3 distinct movies from the library so the suite works with any MOVIES_FOLDER.
+async function discoverMovies() {
+  const r = await api('/Items?IncludeItemTypes=Movie&Recursive=true&Limit=30&Fields=Name');
+  const seen = new Set();
+  const out = [];
+  for (const m of r.json?.Items || []) {
+    if (!m?.Name) continue;
+    const key = m.Name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ id: m.Id, name: m.Name });
+    if (out.length >= 3) break;
+  }
+  if (out.length < 3) throw new Error(`need 3 distinct movies in the library, found ${out.length}`);
+  return out;
+}
+const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 async function login(page) {
   await page.goto(BASE + '/web/', { waitUntil: 'domcontentloaded', timeout: 60000 });
   await page.waitForSelector('#txtManualName', { timeout: 30000 });
-  await page.fill('#txtManualName', 'admin');
-  await page.fill('#txtManualPassword', 'E2eAdmin123!');
+  await page.fill('#txtManualName', ADMIN_USER);
+  await page.fill('#txtManualPassword', ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Sign In' }).click();
   await page.waitForURL((u) => !String(u).includes('#/login'), { timeout: 30000 });
   await page.waitForTimeout(4000);
@@ -64,22 +102,12 @@ async function openSpaViaNav(page) {
   await page.waitForTimeout(2500);
 }
 
-// Open a movie detail, then its "Add to collection" dialog. Returns nothing; dialog is left open.
-async function openAddToCollectionDialog(page, movieText) {
-  await page.goto(BASE + '/web/#/movies', { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(6000);
-  const card = page.locator('.card', { hasText: movieText }).first();
-  await card.waitFor({ timeout: 20000 });
-  let navigated = false;
-  for (let attempt = 0; attempt < 3 && !navigated; attempt++) {
-    await card.scrollIntoViewIfNeeded().catch(() => {});
-    await card.click({ timeout: 10000 }).catch(() => {});
-    try {
-      await page.waitForURL(/#\/details/, { timeout: 8000 });
-      navigated = true;
-    } catch { /* retry click */ }
-  }
-  if (!navigated) throw new Error(`could not open detail page for ${movieText}`);
+// Open a movie's detail page (by id, so it works for any movie regardless of
+// where it sits in the library grid), then its "Add to collection" dialog.
+// The dialog is left open for the caller to act on.
+async function openAddToCollectionDialog(page, movie) {
+  await page.goto(`${BASE}/web/index.html#!/details?id=${movie.id}`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(5000);
   // JF 12 leaves stale zero-size copies of the detail "More" button in the DOM;
   // only the last one is real, so target the visible one explicitly.
   const moreBtn = page.locator('button.btnMoreCommands:visible').first();
@@ -101,6 +129,10 @@ page.on('response', (r) => { if (r.status() >= 400) httpErrors.push(`[${r.status
 
 try {
   await ensureToken();
+
+  // Discover 3 distinct movies from the library (the suite is movie-agnostic).
+  const [movie1, movie2, movie3] = await discoverMovies();
+  console.log(`\nUsing movies:  #1=${movie1.name}   #2=${movie2.name}   #3=${movie3.name}`);
 
   // ---------- Phase A: login + nav entry ----------
   step('A1. Log in as admin');
@@ -126,8 +158,8 @@ try {
   }
 
   // ---------- Phase B: create a collection via the JF UI ----------
-  step('B1. Wing Chun -> More -> Add to collection -> new "Kung Fu Classics"');
-  await openAddToCollectionDialog(page, 'Wing Chun');
+  step(`B1. ${movie1.name} -> Add to collection -> new "Kung Fu Classics"`);
+  await openAddToCollectionDialog(page, movie1);
   await page.fill('#txtNewCollectionName', 'Kung Fu Classics');
   await page.locator('.dialog button.btnSubmit').first().click({ timeout: 10000 });
   await page.keyboard.press('Escape').catch(() => {});
@@ -137,8 +169,8 @@ try {
   if (kf1) ok(`collection created with 1 movie (count=${kf1.MovieCount})`);
   else { fail(`collection not found after create: ${JSON.stringify(colls1.json).slice(0, 200)}`); await shot(page, 'b1-missing'); }
 
-  step('B2. Shaolin_Ba_Duan_Jing -> Add to collection -> join "Kung Fu Classics"');
-  await openAddToCollectionDialog(page, 'Shaolin');
+  step(`B2. ${movie2.name} -> Add to collection -> join "Kung Fu Classics"`);
+  await openAddToCollectionDialog(page, movie2);
   const joinSel = page.locator('#selectCollectionToAddTo');
   const hasOption = (await joinSel.locator('option', { hasText: 'Kung Fu Classics' }).count()) > 0;
   if (hasOption) {
@@ -171,16 +203,16 @@ try {
   ok(`poll room: ${page.url()}`);
   await shot(page, 'c2-poll-room');
 
-  step('C3. Suggest a movie via search picker (Kill Bill)');
+  step(`C3. Suggest a movie via search picker (${movie3.name})`);
   const suggestBtn = page.getByRole('button', { name: /suggest/i }).first();
   if (await suggestBtn.count() > 0) await suggestBtn.click({ timeout: 10000 });
   await page.waitForSelector('input[type="search"]', { timeout: 10000 });
-  await page.fill('input[type="search"]', 'Kill Bill');
+  await page.fill('input[type="search"]', movie3.name);
   await page.waitForTimeout(3000);
-  const killBillCard = page.locator('.picker .row').filter({ hasText: /Kill Bill/i }).first();
-  await killBillCard.click({ timeout: 15000 });
+  const movie3Card = page.locator('.picker .row').filter({ hasText: new RegExp(escapeRegex(movie3.name), 'i') }).first();
+  await movie3Card.click({ timeout: 15000 });
   await page.waitForTimeout(2500);
-  ok('suggested Kill Bill via search');
+  ok(`suggested ${movie3.name} via search`);
 
   step('C4. Suggest collection via "Browse collections"');
   // The collections list is filtered by the search box (still "Kill Bill" from C3).
@@ -210,17 +242,19 @@ try {
   const boardCount = (bodyNow.match(/Suggested \((\d+)\)/) || [])[1];
   if (boardCount === '3') ok('board has 3 suggestions (1 movie + 2 from collection)');
   else fail(`expected 3 suggestions on board, got ${boardCount}`);
-  const rankingMatch = bodyNow.match(/My watch order[\s\S]{0,300}/)?.[0] || '';
-  console.log('  ranking:', rankingMatch.replace(/\n+/g, ' | ').slice(0, 250));
-  const hasKillBillInRanking = rankingMatch.includes('Kill Bill');
-  const hasWingChunInRanking = rankingMatch.includes('Wing Chun');
-  if (hasKillBillInRanking && hasWingChunInRanking) ok('all 3 auto-ranked in my watch order');
-  else fail(`ranking incomplete: killBill=${hasKillBillInRanking} wingChun=${hasWingChunInRanking}`);
-  const standings = bodyNow.match(/Standings live[\s\S]{0,400}/)?.[0] || '';
-  console.log('  standings:', standings.replace(/\n+/g, ' | ').slice(0, 300));
-  const killBillFirst = /Kill Bill[^\n]*\n[^\n]*\b1\b/.test(standings) || standings.indexOf('Kill Bill') < standings.indexOf('Wing Chun');
-  if (killBillFirst) ok('Kill Bill ranks #1 (first in my ballot)');
-  else fail('Kill Bill not ranked first in standings');
+  // Read the actual ranked movie names from the "My watch order" card (robust to long names).
+  const rankedNames = await page.evaluate(() => {
+    const card = document.querySelector('label.share')?.closest('.card');
+    if (!card) return [];
+    return Array.from(card.querySelectorAll('.list .row .name')).map((n) => (n.textContent || '').trim());
+  });
+  console.log('  ranking:', rankedNames.join('  |  '));
+  if (rankedNames.length === 3) ok('all 3 auto-ranked in my watch order');
+  else fail(`expected 3 ranked movies, got ${rankedNames.length}: ${rankedNames.join(', ')}`);
+  if (rankedNames[0] === movie3.name) ok(`${movie3.name} ranks #1 (first suggested)`);
+  else fail(`expected #1 = "${movie3.name}", got "${rankedNames[0]}"`);
+  if (rankedNames.includes(movie1.name) && rankedNames.includes(movie2.name)) ok('collection movies are in the ranking');
+  else fail(`ranking missing collection movies: ${rankedNames.join(', ')}`);
   await shot(page, 'c5-final-state');
 
   // ---------- Phase G: standings vote-breakdown (pts hover tooltip) ----------

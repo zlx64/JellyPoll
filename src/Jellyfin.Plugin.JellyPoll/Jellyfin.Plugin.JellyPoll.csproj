@@ -31,4 +31,9 @@
     <EmbeddedResource Include="..\..\localization\uk.json" LogicalName="Jellyfin.Plugin.JellyPoll.Localization.uk.json" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="meta.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="..\..\docs\logo.png" Link="logo.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

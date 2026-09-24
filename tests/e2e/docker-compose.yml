@@ -1,12 +1,12 @@
 services:
   jellyfin:
-    image: jellyfin/jellyfin:12.1
+    image: ${JELLYFIN_IMAGE:-jellyfin/jellyfin:12.1}
     container_name: jellypoll-e2e
     ports:
-      - "8096:8096"
+      - "${JELLYFIN_HOST_PORT:-8096}:8096"
     volumes:
       - jellyfin-e2e-data:/jellyfin/data
-      - F:\Movies:/media/movies:ro
+      - ${MOVIES_FOLDER}:/media/movies:ro
     environment:
       - PUID=0
       - PGID=0

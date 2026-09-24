@@ -3,7 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "e2e": "node e2e.mjs"
+    "all": "node run-e2e.mjs",
+    "fresh": "node run-e2e.mjs --fresh",
+    "setup": "node run-e2e.mjs --no-tests",
+    "e2e": "node e2e.mjs",
+    "down": "node run-e2e.mjs --down"
   },
   "devDependencies": {
     "playwright": "^1.63.0"

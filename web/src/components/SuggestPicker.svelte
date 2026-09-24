@@ -12,17 +12,18 @@
   let searching = $state(false);
   let busyItemId = $state<string | null>(null);
 
+  // Collections (BoxSet) are intentionally excluded from the movie search —
+  // they are browsed only through the "Browse collections" menu below.
   const includeTypes = [
     'Movie',
-    'BoxSet',
     ...(poll.AllowEpisodes ? ['Episode'] : []),
     ...(poll.AllowSeries ? ['Series'] : [])
   ].join(',');
 
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
-  // Jellyfin 12's /Items searchTerm and /Search/Hints both exclude BoxSets,
-  // so collections are browsed through the plugin's own endpoint.
+  // Collections are browsed through the plugin's own endpoint (below),
+  // not through the /Items movie search.
   let showCollections = $state(false);
   let collections = $state<{ Id: string; Name: string; Year?: number | null; MovieCount: number }[]>([]);
   let loadingCollections = $state(false);
@@ -87,7 +88,12 @@
       // Drop the card from results — resuggesting it yields "already in poll".
       results = results.filter((r) => r.Id !== item.Id);
     } catch (e) {
-      onAdded(errorMessage(e), true);
+      if ((e as { code?: string }).code === 'duplicate_suggestion') {
+        // Already in the poll — show a friendly notice, not an error.
+        onAdded(errorMessage(e), false);
+      } else {
+        onAdded(errorMessage(e), true);
+      }
     } finally {
       busyItemId = null;
     }

@@ -32,9 +32,13 @@ async function request<T>(path: string, init: RequestInit): Promise<T> {
     let code = 'error';
     let message = res.statusText;
     try {
-      const body = (await res.json()) as { error?: string; message?: string };
-      code = body.error ?? code;
-      message = body.message ?? message;
+      // The server serializes ApiError with PascalCase (Error/Message); accept
+      // camelCase too so the code/message are parsed and localized correctly.
+      const body = (await res.json()) as {
+        error?: string; message?: string; Error?: string; Message?: string;
+      };
+      code = body.error ?? body.Error ?? code;
+      message = body.message ?? body.Message ?? message;
     } catch {
       /* non-JSON error */
     }

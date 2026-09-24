@@ -130,6 +130,10 @@ page.on('response', (r) => { if (r.status() >= 400) httpErrors.push(`[${r.status
 try {
   await ensureToken();
 
+  // Reset the persistent "share my ranking" preference so Phase G is
+  // deterministic regardless of prior runs or manual browser testing.
+  await api('/JellyPoll/Preferences', 'PUT', { shareRanking: false });
+
   // Discover 3 distinct movies from the library (the suite is movie-agnostic).
   const [movie1, movie2, movie3] = await discoverMovies();
   console.log(`\nUsing movies:  #1=${movie1.name}   #2=${movie2.name}   #3=${movie3.name}`);
@@ -213,6 +217,34 @@ try {
   await movie3Card.click({ timeout: 15000 });
   await page.waitForTimeout(2500);
   ok(`suggested ${movie3.name} via search`);
+
+  step('C3b. Re-suggesting a movie already in the poll shows a friendly notice (not an error)');
+  await page.fill('input[type="search"]', '');
+  await page.waitForTimeout(400);
+  await page.fill('input[type="search"]', movie3.name);
+  await page.waitForTimeout(3000);
+  const dupCard = page.locator('.picker .row').filter({ hasText: new RegExp(escapeRegex(movie3.name), 'i') }).first();
+  await dupCard.click({ timeout: 15000 });
+  await page.waitForTimeout(1500);
+  const dupToast = page.locator('.toast').first();
+  if (await dupToast.isVisible().catch(() => false)) {
+    const dupToastText = (await dupToast.innerText()).replace(/\s+/g, ' ').trim();
+    const dupIsErr = await dupToast.evaluate((el) => el.classList.contains('err'));
+    if (!dupIsErr && /already in the poll/i.test(dupToastText)) ok(`friendly non-error notice: "${dupToastText}"`);
+    else { fail(`expected non-error "already in the poll" notice, got err=${dupIsErr} text="${dupToastText}"`); await shot(page, 'c3b-toast'); }
+  } else {
+    fail('no toast shown when re-suggesting an existing movie');
+    await shot(page, 'c3b-no-toast');
+  }
+
+  step('C3c. Movie search excludes collections (they live only in "Browse collections")');
+  await page.fill('input[type="search"]', '');
+  await page.waitForTimeout(400);
+  await page.fill('input[type="search"]', 'Kung Fu Classics');
+  await page.waitForTimeout(3000);
+  const searchRowTexts = await page.locator('.picker .list .row').allInnerTexts().catch(() => []);
+  if (!searchRowTexts.some((txt) => /Kung Fu Classics/i.test(txt))) ok('collection not shown in movie search results');
+  else { fail('collection leaked into movie search results'); await shot(page, 'c3c-collection-in-search'); }
 
   step('C4. Suggest collection via "Browse collections"');
   // The collections list is filtered by the search box (still "Kill Bill" from C3).

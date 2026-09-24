@@ -160,6 +160,9 @@ public sealed class SqlitePollRepository : IPollRepository
                 "DELETE FROM ballot_entries WHERE ballot_id IN (SELECT id FROM ballots WHERE poll_id = @id);",
                 new { id = pollId.ToString() }, tx);
             conn.Execute("DELETE FROM ballots WHERE poll_id = @id;", new { id = pollId.ToString() }, tx);
+            conn.Execute(
+                "DELETE FROM thumbs_downs WHERE suggestion_id IN (SELECT id FROM suggestions WHERE poll_id = @id);",
+                new { id = pollId.ToString() }, tx);
             conn.Execute("DELETE FROM suggestions WHERE poll_id = @id;", new { id = pollId.ToString() }, tx);
             conn.Execute("DELETE FROM polls WHERE id = @id;", new { id = pollId.ToString() }, tx);
             tx.Commit();
@@ -183,6 +186,9 @@ public sealed class SqlitePollRepository : IPollRepository
                 "DELETE FROM ballot_entries WHERE ballot_id IN (SELECT id FROM ballots WHERE poll_id IN (SELECT id FROM polls WHERE status = 1));",
                 transaction: tx);
             conn.Execute("DELETE FROM ballots WHERE poll_id IN (SELECT id FROM polls WHERE status = 1);", transaction: tx);
+            conn.Execute(
+                "DELETE FROM thumbs_downs WHERE suggestion_id IN (SELECT id FROM suggestions WHERE poll_id IN (SELECT id FROM polls WHERE status = 1));",
+                transaction: tx);
             conn.Execute("DELETE FROM suggestions WHERE poll_id IN (SELECT id FROM polls WHERE status = 1);", transaction: tx);
             conn.Execute("DELETE FROM polls WHERE status = 1;", transaction: tx);
             tx.Commit();
@@ -269,6 +275,9 @@ public sealed class SqlitePollRepository : IPollRepository
             using var tx = conn.BeginTransaction();
             conn.Execute(
                 "DELETE FROM ballot_entries WHERE suggestion_id = @s;",
+                new { s = suggestionId.ToString() }, tx);
+            conn.Execute(
+                "DELETE FROM thumbs_downs WHERE suggestion_id = @s;",
                 new { s = suggestionId.ToString() }, tx);
             var affected = conn.Execute(
                 "DELETE FROM suggestions WHERE id = @s AND poll_id = @p;",
@@ -465,6 +474,7 @@ public sealed class SqlitePollRepository : IPollRepository
             foreach (var sid in suggestionIds)
             {
                 conn.Execute("DELETE FROM ballot_entries WHERE suggestion_id = @s;", new { s = sid.ToString() }, tx);
+                conn.Execute("DELETE FROM thumbs_downs WHERE suggestion_id = @s;", new { s = sid.ToString() }, tx);
                 removed += conn.Execute("DELETE FROM suggestions WHERE id = @s;", new { s = sid.ToString() }, tx);
             }
 
@@ -516,5 +526,90 @@ public sealed class SqlitePollRepository : IPollRepository
         var rows = conn.Query<string>(
             "SELECT user_id FROM user_settings WHERE share_ranking = 1;");
         return rows.Select(Guid.Parse).ToHashSet();
+    }
+
+    // ---------- thumbs down (social signal, never scored) ----------
+
+    /// <summary>
+    /// Records a thumbs-down. Bumps the poll's state_version so other clients' live
+    /// pollers refetch and see the update.
+    /// </summary>
+    public void AddThumbsDown(Guid suggestionId, Guid userId)
+    {
+        _writeLock.Wait();
+        try
+        {
+            using var conn = _db.Open();
+            using var tx = conn.BeginTransaction();
+            var pollId = conn.ExecuteScalar<string?>(
+                "SELECT poll_id FROM suggestions WHERE id = @s;", new { s = suggestionId.ToString() }, tx);
+            if (pollId is null)
+            {
+                throw new SuggestionNotFoundException();
+            }
+
+            conn.Execute(
+                "INSERT OR IGNORE INTO thumbs_downs (suggestion_id, user_id, created_at) VALUES (@s, @u, @now);",
+                new { s = suggestionId.ToString(), u = userId.ToString(), now = Now() }, tx);
+            BumpStateVersion(conn, tx, Guid.Parse(pollId));
+            tx.Commit();
+        }
+        finally
+        {
+            _writeLock.Release();
+        }
+    }
+
+    public void RemoveThumbsDown(Guid suggestionId, Guid userId)
+    {
+        _writeLock.Wait();
+        try
+        {
+            using var conn = _db.Open();
+            using var tx = conn.BeginTransaction();
+            var pollId = conn.ExecuteScalar<string?>(
+                "SELECT poll_id FROM suggestions WHERE id = @s;", new { s = suggestionId.ToString() }, tx);
+            if (pollId is null)
+            {
+                throw new SuggestionNotFoundException();
+            }
+
+            var affected = conn.Execute(
+                "DELETE FROM thumbs_downs WHERE suggestion_id = @s AND user_id = @u;",
+                new { s = suggestionId.ToString(), u = userId.ToString() }, tx);
+            if (affected > 0)
+            {
+                BumpStateVersion(conn, tx, Guid.Parse(pollId));
+            }
+
+            tx.Commit();
+        }
+        finally
+        {
+            _writeLock.Release();
+        }
+    }
+
+    public IReadOnlyDictionary<Guid, IReadOnlyList<Guid>> GetThumbsDowns(Guid pollId)
+    {
+        using var conn = _db.Open();
+        const string sql = "SELECT td.suggestion_id AS Sid, td.user_id AS Uid " +
+                           "FROM thumbs_downs td JOIN suggestions s ON s.id = td.suggestion_id " +
+                           "WHERE s.poll_id = @p " +
+                           "ORDER BY td.created_at ASC, td.user_id ASC;";
+        var rows = conn.Query<(string Sid, string Uid)>(sql, new { p = pollId.ToString() });
+        var result = new Dictionary<Guid, List<Guid>>();
+        foreach (var r in rows)
+        {
+            var sid = Guid.Parse(r.Sid);
+            if (!result.TryGetValue(sid, out var list))
+            {
+                result[sid] = list = new List<Guid>();
+            }
+
+            list.Add(Guid.Parse(r.Uid));
+        }
+
+        return result.ToDictionary(kv => kv.Key, kv => (IReadOnlyList<Guid>)kv.Value);
     }
 }

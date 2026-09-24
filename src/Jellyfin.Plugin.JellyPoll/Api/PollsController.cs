@@ -187,6 +187,46 @@ public sealed class PollsController : JellyPollControllerBase
         catch (AccessDeniedException) { return ForbiddenError(); }
     }
 
+    // ---------- 4.5a thumbs down (social signal, never scored) ----------
+
+    [HttpPost("Polls/{id:guid}/Suggestions/{suggestionId:guid}/ThumbsDown")]
+    public async Task<ActionResult> ThumbsDown(Guid id, Guid suggestionId)
+    {
+        var user = await ResolveUserAsync().ConfigureAwait(false);
+        if (user is null)
+        {
+            return UnauthorizedError();
+        }
+
+        try
+        {
+            _polls.ThumbsDown(user, id, suggestionId);
+            return NoContent();
+        }
+        catch (PollNotFoundException) { return NotFoundError(); }
+        catch (SuggestionNotFoundException) { return NotFoundError(); }
+        catch (PollClosedException) { return Error(409, "poll_closed", "Poll is closed."); }
+    }
+
+    [HttpDelete("Polls/{id:guid}/Suggestions/{suggestionId:guid}/ThumbsDown")]
+    public async Task<ActionResult> RemoveThumbsDown(Guid id, Guid suggestionId)
+    {
+        var user = await ResolveUserAsync().ConfigureAwait(false);
+        if (user is null)
+        {
+            return UnauthorizedError();
+        }
+
+        try
+        {
+            _polls.RemoveThumbsDown(user, id, suggestionId);
+            return NoContent();
+        }
+        catch (PollNotFoundException) { return NotFoundError(); }
+        catch (SuggestionNotFoundException) { return NotFoundError(); }
+        catch (PollClosedException) { return Error(409, "poll_closed", "Poll is closed."); }
+    }
+
     // ---------- 4.6 save ballot ----------
 
     [HttpPut("Polls/{id:guid}/Ballot")]

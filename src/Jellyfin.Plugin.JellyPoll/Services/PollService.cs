@@ -312,6 +312,42 @@ public sealed class PollService
         return orderedSuggestionIds.Count;
     }
 
+    // ---------- thumbs down (social signal, never scored) ----------
+
+    /// <summary>Marks "I don't want to watch this" on a suggestion. No effect on points.</summary>
+    public void ThumbsDown(User user, Guid pollId, Guid suggestionId)
+    {
+        var poll = GetPoll(pollId);
+        if (poll.Status != PollStatus.Open)
+        {
+            throw new PollClosedException();
+        }
+
+        if (_repo.GetSuggestion(pollId, suggestionId) is null)
+        {
+            throw new SuggestionNotFoundException();
+        }
+
+        _repo.AddThumbsDown(suggestionId, user.Id);
+    }
+
+    /// <summary>Removes the user's thumbs-down from a suggestion.</summary>
+    public void RemoveThumbsDown(User user, Guid pollId, Guid suggestionId)
+    {
+        var poll = GetPoll(pollId);
+        if (poll.Status != PollStatus.Open)
+        {
+            throw new PollClosedException();
+        }
+
+        if (_repo.GetSuggestion(pollId, suggestionId) is null)
+        {
+            throw new SuggestionNotFoundException();
+        }
+
+        _repo.RemoveThumbsDown(suggestionId, user.Id);
+    }
+
     // ---------- standings / results ----------
 
     /// <summary>Scored standings joined with current item metadata (doc 04 §3).</summary>
@@ -387,14 +423,25 @@ public sealed class PollService
             s.SuggestedBy.ToString(),
             DisplayName(s.SuggestedBy),
             s.SuggestedAt,
-            missing);
+            missing,
+            System.Array.Empty<string>(),
+            false);
     }
 
     public Api.PollDetailDto BuildDetail(User user, Guid pollId)
     {
         var poll = GetPoll(pollId);
         var includeLive = _config.Current.ShowLiveStandings;
-        var suggestions = _repo.ListSuggestions(pollId).Select(ToSuggestionDto).ToList();
+        var thumbsDowns = _repo.GetThumbsDowns(pollId);
+        var suggestions = _repo.ListSuggestions(pollId).Select(s =>
+        {
+            var userIds = thumbsDowns.TryGetValue(s.Id, out var u) ? u : System.Array.Empty<Guid>();
+            return ToSuggestionDto(s) with
+            {
+                ThumbsDownNames = userIds.Select(DisplayName).ToList(),
+                IHaveThumbsDown = userIds.Contains(user.Id)
+            };
+        }).ToList();
         var standings = GetStandings(pollId, includeLive)
             .Select(e => new Api.StandingEntryDto(
                 e.Entry.Rank, e.Entry.SuggestionId, e.Entry.Points, e.Entry.FirstPlaceCount,

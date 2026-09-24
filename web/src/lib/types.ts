@@ -39,6 +39,8 @@ export interface Suggestion {
   SuggestedByName: string;
   SuggestedAt: string;
   ItemMissing: boolean;
+  ThumbsDownNames: string[];
+  IHaveThumbsDown: boolean;
 }
 
 export interface StandingEntry {

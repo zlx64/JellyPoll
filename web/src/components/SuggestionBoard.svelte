@@ -36,6 +36,18 @@
       alert(errorMessage(e));
     }
   }
+
+  // "I don't want to watch this" — a social signal, never affects points.
+  async function toggleThumbs(s: Suggestion) {
+    if (detail.Poll.Status !== 'open') return;
+    try {
+      if (s.IHaveThumbsDown) await jellypoll.removeThumbsDown(detail.Poll.Id, s.Id);
+      else await jellypoll.thumbsDown(detail.Poll.Id, s.Id);
+      onChanged();
+    } catch (e) {
+      alert(errorMessage(e));
+    }
+  }
 </script>
 
 <div class="board">
@@ -62,6 +74,20 @@
               {#if s.ItemMissing}<Icon name="visibility_off" size={12} /> {t('board.missing')}{/if}
             </div>
           </div>
+          {#if detail.Poll.Status === 'open' || s.ThumbsDownNames.length > 0}
+            <button
+              class="thumbbtn"
+              class:active={s.IHaveThumbsDown}
+              disabled={detail.Poll.Status !== 'open'}
+              title={s.IHaveThumbsDown ? t('board.thumbDownMine') : t('board.thumbDown')}
+              onclick={() => toggleThumbs(s)}
+            >
+              <span class="thumbicon"><Icon name="thumb_down" size={14} /></span>
+              {#if s.ThumbsDownNames.length > 0}
+                <span class="thumbcount" title={t('board.thumbDownBy', { names: s.ThumbsDownNames.join(', ') })}>{s.ThumbsDownNames.length}</span>
+              {/if}
+            </button>
+          {/if}
           {#if detail.Poll.Status === 'open' && !inMyOrder(s) && !s.ItemMissing}
             <button class="addbtn" title={t('board.addTitle')} onclick={() => onAddToOrder(s.Id)}>
               <Icon name="add" size={14} /> {t('board.order')}
@@ -110,4 +136,20 @@
     display: inline-flex; align-items: center; gap: 0.25rem; white-space: nowrap;
   }
   .addbtn:hover { background: rgba(77, 163, 255, 0.12); }
+  .thumbbtn {
+    display: inline-flex; align-items: center; gap: 0.25rem; flex-shrink: 0;
+    background: transparent; border: 1px solid var(--jp-border);
+    color: var(--jp-text-dim); font-size: 0.72rem; font-weight: 600;
+    padding: 0.22rem 0.4rem; border-radius: 999px; white-space: nowrap;
+    transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  }
+  .thumbbtn:hover:not(:disabled) { background: rgba(211, 47, 47, 0.1); color: var(--jp-danger); border-color: var(--jp-danger); }
+  .thumbbtn.active { background: rgba(211, 47, 47, 0.15); color: var(--jp-danger); border-color: var(--jp-danger); }
+  .thumbbtn:disabled { opacity: 0.5; cursor: default; }
+  .thumbicon { display: inline-flex; transform: scaleY(-1); }
+  .thumbcount {
+    font-size: 0.68rem; font-weight: 700; line-height: 1;
+    background: var(--jp-surface-3); padding: 0.1rem 0.35rem; border-radius: 999px;
+  }
+  .thumbbtn.active .thumbcount { background: rgba(211, 47, 47, 0.28); }
 </style>

@@ -99,7 +99,10 @@
     "inOrderTitle": "In your watch order",
     "inOrder": "in my order",
     "removeTitle": "Remove from poll",
-    "removeConfirm": "Remove \"{name}\" from the poll?"
+    "removeConfirm": "Remove \"{name}\" from the poll?",
+    "thumbDown": "I don't want to watch this",
+    "thumbDownMine": "You don't want to watch this — click to undo",
+    "thumbDownBy": "Not wanted by {names}"
   },
   "ranking": {
     "title": "My watch order",

@@ -297,6 +297,49 @@ try {
   if ((await page.locator('.pts.hoverable').count()) === 0) ok('pts no longer hoverable after disabling sharing');
   else fail('pts still hoverable after disabling sharing');
 
+  // ---------- Phase H: thumbs-down (social signal, never scored) ----------
+  const pollsH = await api('/JellyPoll/Polls');
+  const pollIdH = (pollsH.json?.Polls || []).find((p) => p.Title === 'E2E UI Poll')?.Id;
+
+  step('H1. Thumbs-down button present on each board row');
+  const thumbBtns = page.locator('.board .thumbbtn');
+  const thumbCount = await thumbBtns.count();
+  if (thumbCount === 3) ok('3 thumbs-down buttons (one per suggestion)');
+  else { fail(`expected 3 thumbs-down buttons, got ${thumbCount}`); await shot(page, 'h1-missing'); }
+
+  step('H2. Thumbs-down on first suggestion -> visible to all, points unchanged');
+  if (!pollIdH) {
+    fail('could not resolve E2E poll id for thumbs-down test');
+  } else {
+    const before = await api(`/JellyPoll/Polls/${pollIdH}`);
+    const s0 = before.json?.Suggestions?.[0];
+    const ptsBefore = before.json?.Standings?.find((x) => x.SuggestionId === s0?.Id)?.Points;
+    await thumbBtns.first().click({ timeout: 10000 });
+    await page.waitForTimeout(1500);
+    const after = await api(`/JellyPoll/Polls/${pollIdH}`);
+    const s0After = after.json?.Suggestions?.find((s) => s.Id === s0?.Id);
+    const ptsAfter = after.json?.Standings?.find((x) => x.SuggestionId === s0?.Id)?.Points;
+    if (s0After?.IHaveThumbsDown && (s0After?.ThumbsDownNames || []).includes('admin')) ok('thumbs-down registered + visible to all (admin listed)');
+    else fail(`thumbs-down not registered: ${JSON.stringify(s0After)}`);
+    if (ptsBefore !== undefined && ptsBefore === ptsAfter) ok(`points unchanged after thumbs-down (${ptsBefore})`);
+    else fail(`points changed after thumbs-down: ${ptsBefore} -> ${ptsAfter}`);
+    const badge = (await page.locator('.board .thumbbtn .thumbcount').first().innerText().catch(() => '')).trim();
+    if (badge === '1') ok('count badge shows 1');
+    else fail(`count badge = "${badge}"`);
+    await shot(page, 'h2-thumbs-down');
+  }
+
+  step('H3. Click again to undo -> removed');
+  if (pollIdH) {
+    const s0id = (await api(`/JellyPoll/Polls/${pollIdH}`)).json?.Suggestions?.[0]?.Id;
+    await thumbBtns.first().click({ timeout: 10000 });
+    await page.waitForTimeout(1500);
+    const undo = await api(`/JellyPoll/Polls/${pollIdH}`);
+    const s0Undo = undo.json?.Suggestions?.find((s) => s.Id === s0id);
+    if (s0Undo && !s0Undo.IHaveThumbsDown && (s0Undo.ThumbsDownNames || []).length === 0) ok('thumbs-down removed');
+    else fail(`thumbs-down not removed: ${JSON.stringify(s0Undo)}`);
+  }
+
   // ---------- Phase E: i18n ----------
   const me = await api('/Users/Me');
   const uid = me.json?.Id;

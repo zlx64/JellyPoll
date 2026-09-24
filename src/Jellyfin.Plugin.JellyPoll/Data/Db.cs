@@ -60,6 +60,12 @@ public sealed class Db
             conn.Execute(SchemaV2);
             conn.Execute("PRAGMA user_version = 2;");
         }
+
+        if (version < 3)
+        {
+            conn.Execute(SchemaV3);
+            conn.Execute("PRAGMA user_version = 3;");
+        }
     }
 
     private const string SchemaV1 = @"
@@ -117,5 +123,20 @@ CREATE TABLE IF NOT EXISTS user_settings (
     user_id       TEXT PRIMARY KEY,
     share_ranking INTEGER NOT NULL DEFAULT 0
 );
+";
+
+    /// <summary>
+    /// v3: per-user "I don't want to watch this" signal on a suggestion. Purely a
+    /// social indicator — it is shown to everyone but never feeds the Borda score.
+    /// </summary>
+    private const string SchemaV3 = @"
+CREATE TABLE IF NOT EXISTS thumbs_downs (
+    suggestion_id TEXT NOT NULL REFERENCES suggestions(id) ON DELETE CASCADE,
+    user_id       TEXT NOT NULL,
+    created_at    TEXT NOT NULL,
+    PRIMARY KEY (suggestion_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_thumbs_downs_suggestion ON thumbs_downs (suggestion_id);
 ";
 }

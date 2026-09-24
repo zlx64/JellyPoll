@@ -58,4 +58,15 @@ public interface IPollRepository
 
     /// <summary>All user ids that have opted in to sharing their ranking.</summary>
     IReadOnlySet<Guid> GetShareRankingUserIds();
+
+    // ---------- thumbs down (social signal, never scored) ----------
+
+    /// <summary>Records the user's "I don't want to watch this" on a suggestion.</summary>
+    void AddThumbsDown(Guid suggestionId, Guid userId);
+
+    /// <summary>Removes the user's thumbs-down from a suggestion.</summary>
+    void RemoveThumbsDown(Guid suggestionId, Guid userId);
+
+    /// <summary>Per-suggestion thumbs-down user ids for a poll (suggestionId -> userIds).</summary>
+    IReadOnlyDictionary<Guid, IReadOnlyList<Guid>> GetThumbsDowns(Guid pollId);
 }

@@ -81,6 +81,13 @@ export const jellypoll = {
   removeSuggestion: (pollId: string, suggestionId: string) =>
     request<void>(`/JellyPoll/Polls/${pollId}/Suggestions/${suggestionId}`, { method: 'DELETE' }),
 
+  /** "I don't want to watch this" — a social signal, no effect on points. */
+  thumbsDown: (pollId: string, suggestionId: string) =>
+    request<void>(`/JellyPoll/Polls/${pollId}/Suggestions/${suggestionId}/ThumbsDown`, { method: 'POST' }),
+
+  removeThumbsDown: (pollId: string, suggestionId: string) =>
+    request<void>(`/JellyPoll/Polls/${pollId}/Suggestions/${suggestionId}/ThumbsDown`, { method: 'DELETE' }),
+
   saveBallot: (pollId: string, suggestionIds: string[]) =>
     request<{ StateVersion: number; SavedCount: number }>(`/JellyPoll/Polls/${pollId}/Ballot`, {
       method: 'PUT',

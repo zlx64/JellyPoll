@@ -26,7 +26,9 @@ public sealed record SuggestionDto(
     string SuggestedById,
     string SuggestedByName,
     string SuggestedAt,
-    bool ItemMissing);
+    bool ItemMissing,
+    IReadOnlyList<string> ThumbsDownNames,
+    bool IHaveThumbsDown);
 
 /// <summary>Standings row (doc 04 §3).</summary>
 public sealed record StandingEntryDto(

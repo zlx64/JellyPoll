@@ -174,6 +174,58 @@ public sealed class FakePollRepository : IPollRepository
         RemovedSuggestions.AddRange(suggestionIds);
         return removed;
     }
+
+    // ---------- user preferences ----------
+
+    public Dictionary<Guid, bool> ShareRanking { get; } = new();
+
+    public bool GetShareRanking(Guid userId) => ShareRanking.TryGetValue(userId, out var v) && v;
+
+    public void SetShareRanking(Guid userId, bool value) => ShareRanking[userId] = value;
+
+    public IReadOnlySet<Guid> GetShareRankingUserIds() =>
+        ShareRanking.Where(kv => kv.Value).Select(kv => kv.Key).ToHashSet();
+
+    // ---------- thumbs down (social signal, never scored) ----------
+
+    public Dictionary<Guid, List<Guid>> ThumbsDowns { get; } = new();
+
+    public void AddThumbsDown(Guid suggestionId, Guid userId)
+    {
+        if (!Suggestions.TryGetValue(suggestionId, out var s))
+        {
+            throw new SuggestionNotFoundException();
+        }
+
+        if (!ThumbsDowns.TryGetValue(suggestionId, out var users))
+        {
+            ThumbsDowns[suggestionId] = users = new List<Guid>();
+        }
+
+        if (!users.Contains(userId))
+        {
+            users.Add(userId);
+            Bump(s.PollId);
+        }
+    }
+
+    public void RemoveThumbsDown(Guid suggestionId, Guid userId)
+    {
+        if (!Suggestions.TryGetValue(suggestionId, out var s))
+        {
+            throw new SuggestionNotFoundException();
+        }
+
+        if (ThumbsDowns.TryGetValue(suggestionId, out var users) && users.Remove(userId))
+        {
+            Bump(s.PollId);
+        }
+    }
+
+    public IReadOnlyDictionary<Guid, IReadOnlyList<Guid>> GetThumbsDowns(Guid pollId) =>
+        Suggestions.Values.Where(s => s.PollId == pollId).OrderBy(s => s.SuggestedAt)
+            .Where(s => ThumbsDowns.ContainsKey(s.Id))
+            .ToDictionary(s => s.Id, s => (IReadOnlyList<Guid>)ThumbsDowns[s.Id].ToList());
 }
 
 /// <summary>ILibraryAccessValidator fake: dictionary-driven item resolution + access.</summary>
